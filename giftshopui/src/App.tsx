@@ -1,35 +1,30 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/layout/Layout';
+import MasterPage from './pages/Customer/MasterPage';
+import Shop from './pages/Customer/Shop';
+import CustomProduct from './pages/Customer/CustomProduct';
+import Quote from './pages/Customer/Quote';
+import Cart from './pages/Customer/Cart';
+import UserProfile from './pages/Customer/UserProfile';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                {/* Tất cả các Route nằm trong Layout sẽ có chung Header & Footer */}
+                <Route path="customer" element={<Layout />}>
+                    <Route path='masterPage' element={<MasterPage />} /> {/* Trang chủ */}
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+                    {/* Định nghĩa các Route khác theo Header */}
+                     <Route path="shop" element={<Shop />} />
+                     <Route path="custom" element={<CustomProduct />} />
+                     <Route path="quote" element={<Quote />} />
+                     <Route path="cart" element={<Cart />} />
+                     <Route path="profile" element={<UserProfile />} />
+                </Route>
+                <Route path="*" element={<MasterPage />} />
+                
+            </Routes>
+        </BrowserRouter>
+    );
 }
-
-export default App
