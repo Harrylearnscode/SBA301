@@ -1,9 +1,9 @@
 import axios, {
-    AxiosInstance,
-    InternalAxiosRequestConfig,
-    AxiosResponse,
     AxiosError
 } from 'axios';
+import type { AxiosInstance } from "axios";
+import type { InternalAxiosRequestConfig } from "axios";
+import type { AxiosResponse } from "axios";
 
 // Định nghĩa interface cho cấu trúc lỗi từ Server (tùy chỉnh theo API của bạn)
 interface ApiErrorResponse {
@@ -11,7 +11,7 @@ interface ApiErrorResponse {
     status?: number;
 }
 
-const baseURL: string = 'localhost:8080/api';
+const baseURL: string = 'http://localhost:8080/api';
 
 const axiosInstance: AxiosInstance = axios.create({
     baseURL,

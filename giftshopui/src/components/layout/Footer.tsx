@@ -3,8 +3,8 @@ import { Facebook, Instagram, Youtube, MapPin, Phone, Mail } from 'lucide-react'
 
 const Footer = () => {
     return (
-        <footer className="bg-[#8A0C0C] text-gray-300 py-16 px-6 md:px-16">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+        <footer className="bg-[#8A0C0C] text-white">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 py-16 px-6 md:px-16">
                 {/* Brand */}
                 <div className="space-y-4">
                     <h2 className="text-xl font-serif font-bold text-yellow-600">QUÀ TẾT VIỆT</h2>
@@ -54,7 +54,7 @@ const Footer = () => {
                     </div>
                 </div>
             </div>
-            <div className="bg-[#460404] mt-16 pt-8 border-t border-gray-800 text-center text-[10px] opacity-50 uppercase tracking-[0.2em]">
+            <div className="bg-[#460404] mt-16 border-t border-gray-800 text-[10px] opacity-50 uppercase tracking-[0.2em] flex items-center justify-center h-16">
                 © 2026 Quà Tết Việt. All rights reserved.
             </div>
         </footer>
