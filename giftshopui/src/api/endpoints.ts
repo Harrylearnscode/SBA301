@@ -1,8 +1,9 @@
 const API_ENDPOINTS = {
-    auth: {
-        login: '/auth/login',
-        register: '/auth/register',
-        refreshToken: '/auth'
+    AUTH: {
+        LOGIN: '/auth/login',
+        REGISTER: '/auth/register',
+        REFRESH_TOKEN: '/auth/refresh-token',
+        LOGOUT: '/auth/logout',
     },
 }
 

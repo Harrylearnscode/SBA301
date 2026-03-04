@@ -31,14 +31,12 @@ const FEATURED_PRODUCTS: Product[] = [
 export default function MasterPage() {
     return (
         <>
-            <Header />
-            {/* Hero Section */}
             <section className="relative bg-[#b30000] h-[500px] md:h-[600px] flex items-center justify-center text-center overflow-hidden">
                 <div className="absolute inset-0 bg-black/20 z-10"></div>
                 <div className="relative z-20 max-w-3xl px-4 flex flex-col items-center">
-          <span className="border border-white/40 text-white/90 text-xs tracking-widest px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
-            ✦ BỘ SƯU TẬP BÍNH NGỌ 2026
-          </span>
+                    <span className="border border-white/40 text-white/90 text-xs tracking-widest px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm">
+                    ✦ BỘ SƯU TẬP BÍNH NGỌ 2026
+                    </span>
                     <h2 className="text-4xl md:text-6xl text-white font-serif mb-6 leading-tight">
                         Gói Trọn <span className="text-[#facc15]">Tinh Hoa</span> Tết Việt
                     </h2>
@@ -76,7 +74,6 @@ export default function MasterPage() {
                     </Link>
                 </div>
             </section>
-            <Footer />
         </>
     );
 }
