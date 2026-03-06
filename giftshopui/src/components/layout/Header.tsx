@@ -24,19 +24,19 @@ export default function Header() {
 
           <nav className="hidden md:flex space-x-8">
             <Link to="/" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Trang Chủ</Link>
-            <Link to="/customer/shop" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Bộ Sưu Tập</Link>
-            <Link to="/customer/customProduct" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Thiết Kế</Link>
-            <Link to="/customer/quote" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Doanh Nghiệp</Link>
+            <Link to="/shop" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Bộ Sưu Tập</Link>
+            <Link to="/custom-product" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Thiết Kế</Link>
+            <Link to="/quote" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Doanh Nghiệp</Link>
           </nav>
 
           <div className="flex items-center space-x-6 text-gray-700">
             {isAuthenticated ? (
               <>
-                <Link to="/customer/cart" className="relative hover:text-[#b30000] transition">
+                <Link to="/cart" className="relative hover:text-[#b30000] transition">
                   <ShoppingBag size={22} />
                   <span className="absolute -top-1.5 -right-2 bg-[#b30000] text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">0</span>
                 </Link>
-                <Link to="/customer/profile" className="hover:text-[#b30000] transition">
+                <Link to="/profile" className="hover:text-[#b30000] transition">
                   <User size={22} />
                 </Link>
                 <button onClick={handleLogout} className="hover:text-[#b30000] transition" title="Đăng xuất">

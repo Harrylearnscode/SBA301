@@ -16,11 +16,9 @@ export default function LoginForm({ onSwitch, onSuccess }: LoginFormProps) {
     setError('');
     try {
       const data = await AuthService.login({ username, password });
-      console.log("Login response:", data); // Debug log để xem cấu trúc trả về
       // Lúc này data chính là ResponseObject từ Spring Boot
       if (data.success) {
         onSuccess(data.data.accessToken); 
-        console.log("Login successful, token:", data.data.accessToken); // Debug log token
       } else {
         setError(data.message || 'Tài khoản hoặc mật khẩu không đúng');
       }
