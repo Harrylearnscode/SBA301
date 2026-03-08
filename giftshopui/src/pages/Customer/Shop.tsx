@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ProductCard from '../../components/ProductCard';
 import type {Product} from '../../components/ProductCard';
+import { useNavigate } from 'react-router-dom';
 import ProductService from '../../api/service/product.service';
+import CartService from '../../api/service/cart.service';
+import { useAuth } from '../../contexts/AuthContext'; 
+import Toast from '../../components/ui/Toast';
 
 const PRICE_FILTERS = [
   { id: 'under_500', label: 'Dưới 500.000đ', min: 0, max: 500000 },
@@ -16,6 +20,9 @@ export default function Shop() {
   const [error, setError] = useState<string>('');
   
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
   // Gọi API lấy dữ liệu khi trang được load
   useEffect(() => {
@@ -56,6 +63,25 @@ export default function Shop() {
       });
     });
   }, [selectedPriceRanges, products]);
+
+  const handleAddToCart = async (productId: number) => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      // Mặc định ở trang Shop sẽ thêm 1 sản phẩm vào giỏ
+      const res = await CartService.addToCart(productId, 1);
+      if (res.success) {
+        setToast({ show: true, message: "Đã thêm 1 sản phẩm vào giỏ hàng.", type: 'success' });
+      } else {
+        setToast({ show: true, message: res.message || "Không thể thêm vào giỏ", type: 'error' });
+      }
+    } catch (err: any) {
+      setToast({ show: true, message: "Lỗi kết nối máy chủ", type: 'error' });
+    }
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen py-10">
@@ -109,9 +135,7 @@ export default function Shop() {
                   <ProductCard 
                     key={product.id} 
                     product={product} 
-                    onAddToCart={(id) => {
-                      alert(`Chuẩn bị thêm sản phẩm ID: ${id} vào giỏ hàng!`);
-                    }}
+                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </div>
@@ -120,6 +144,13 @@ export default function Shop() {
 
         </div>
       </div>
+      {/* COMPONENT TOAST */}
+      <Toast 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ ...toast, show: false })} 
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AuthService from '../../api/service/AuthService'; // Import AuthService
+import AuthService from '../../api/service/auth.service'; // Import AuthService
 
 interface RegisterFormProps {
   onSwitch: () => void;
