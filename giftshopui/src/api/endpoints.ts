@@ -11,12 +11,17 @@ const API_ENDPOINTS = {
     GET_BY_ID: (id: string | number) => `/products/${id}`,
     },
 
-    CART: {
-    GET_MY_CART: '/api/carts',
-    ADD_ITEM: '/api/carts/items',
-    UPDATE_ITEM: (itemId: string | number) => `/api/carts/items/${itemId}`,
-    REMOVE_ITEM: (itemId: string | number) => `/api/carts/items/${itemId}`,
-    CLEAR: '/api/carts/clear'
+  CART: {
+    GET_MY_CART: '/carts',
+    ADD_ITEM: '/carts/items',
+    UPDATE_ITEM: (itemId: string | number) => `/carts/items/${itemId}`,
+    REMOVE_ITEM: (itemId: string | number) => `/carts/items/${itemId}`,
+    CLEAR: '/carts/clear'
+  },
+
+  USER: {
+        GET_ME: '/users/me',
+        UPDATE_ME: '/users/me',
   }
 }
 

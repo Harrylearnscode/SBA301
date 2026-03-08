@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AuthService from '../../api/service/AuthService';
+import AuthService from '../../api/service/auth.service';
 
 interface LoginFormProps {
   onSwitch: () => void;
