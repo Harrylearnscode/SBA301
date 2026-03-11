@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import com.sba301.giftshop.model.enums.Role;
 
 @Data
 @NoArgsConstructor
@@ -23,6 +24,8 @@ public class UserResponse {
     private LocalDate dateOfBirth;
 
     private Boolean isActive;
+
+    private Role role;
 
     private LocalDateTime createdAt;
 
