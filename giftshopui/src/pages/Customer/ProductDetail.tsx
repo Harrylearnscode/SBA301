@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Truck, Award, RefreshCw, FileText, Minus, Plus } from 'lucide-react';
+import { Truck, Award, RefreshCw, FileText, Minus, Plus, CheckCircle } from 'lucide-react';
 import ProductService from '../../api/service/product.service';
 import ProductCard from '../../components/ProductCard';
 import type { Product } from '../../components/ProductCard';
-import CartService from '../../api/service/CartService';
+import CartService from '../../api/service/cart.service';
 import { useAuth } from '../../contexts/AuthContext';
+import Toast from '../../components/ui/Toast';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -13,11 +14,12 @@ export default function ProductDetail() {
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  
+  const [showToast, setShowToast] = useState(false);
   // State quản lý số lượng thêm vào giỏ
   const [quantity, setQuantity] = useState<number>(1);
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate(); 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
   // Gọi API lấy dữ liệu sản phẩm và sản phẩm tương tự
   useEffect(() => {
@@ -53,9 +55,8 @@ export default function ProductDetail() {
     fetchProductData();
   }, [id]);
 
-const handleAddToCart = async () => {
+  const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
       navigate('/auth');
       return;
     }
@@ -65,13 +66,14 @@ const handleAddToCart = async () => {
     try {
       const res = await CartService.addToCart(product.id, quantity);
       if (res.success) {
-        alert("Thêm vào giỏ hàng thành công!");
-        // Tùy chọn: navigate('/cart') nếu bạn muốn tự động chuyển sang trang Giỏ hàng
+        // Gọi component Toast hiển thị thành công
+        setToast({ show: true, message: `Đã thêm ${quantity} sản phẩm vào giỏ hàng.`, type: 'success' });
       } else {
-        alert(res.message || "Có lỗi xảy ra khi thêm vào giỏ");
+        // Gọi component Toast hiển thị lỗi từ server
+        setToast({ show: true, message: res.message || "Có lỗi xảy ra khi thêm vào giỏ", type: 'error' });
       }
     } catch (err: any) {
-      alert(err || "Lỗi kết nối máy chủ");
+      setToast({ show: true, message: err || "Lỗi kết nối máy chủ", type: 'error' });
     }
   };
 
@@ -221,6 +223,12 @@ const handleAddToCart = async () => {
         )}
 
       </div>
+      <Toast 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ ...toast, show: false })} 
+      />
     </div>
   );
 }

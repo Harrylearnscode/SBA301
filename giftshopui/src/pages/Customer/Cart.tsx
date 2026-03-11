@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ArrowLeft } from 'lucide-react';
-import CartService from '../../api/service/CartService';
+import CartService from '../../api/service/cart.service';
 
 interface CartItem {
   id: number;

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import AuthService from '../api/service/AuthService';
+import AuthService from '../api/service/auth.service';
 
 interface DecodedToken {
   sub: string; // Tương ứng với username
