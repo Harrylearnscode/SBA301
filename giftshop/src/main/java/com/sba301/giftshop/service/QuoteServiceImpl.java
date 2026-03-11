@@ -46,6 +46,7 @@ public class QuoteServiceImpl implements QuoteService {
                 .createdAt(LocalDateTime.now())
                 .totalPrice(BigDecimal.ZERO) // Giá trị bằng 0 cho đến khi Sale báo giá
                 .quoteProducts(new ArrayList<>())
+                .validUntil(LocalDateTime.now().plusWeeks(1))
                 .build();
 
         Quote savedQuote = quoteRepository.save(quote);
@@ -60,11 +61,6 @@ public class QuoteServiceImpl implements QuoteService {
                 Product product = productRepository.findById(itemReq.getProductId())
                         .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
                 quoteProduct.setProduct(product);
-            }
-            if (itemReq.getCustomGiftId() != null) {
-                Product customGift = productRepository.findById(itemReq.getCustomGiftId())
-                        .orElseThrow(() -> new RuntimeException("Giỏ quà không tồn tại"));
-                quoteProduct.setCustomGift(customGift);
             }
 
             quoteProductRepository.save(quoteProduct);
