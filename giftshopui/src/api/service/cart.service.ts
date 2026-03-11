@@ -27,6 +27,7 @@ const CartService = {
     updateQuantity: async (cartItemId: number, quantity: number) => {
         try {
             const response = await axiosInstance.put(API_ENDPOINTS.CART.UPDATE_ITEM(cartItemId), {
+                cartItemId,
                 quantity
             });
             return response.data;
