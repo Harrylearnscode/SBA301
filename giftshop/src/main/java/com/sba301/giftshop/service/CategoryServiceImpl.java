@@ -74,8 +74,7 @@ public class CategoryServiceImpl implements CategoryService {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục cha"));
             category.setParent(parent);
         } else {
-            // Nếu gửi lên parentId = null (tùy vào logic nghiệp vụ của bạn có cho phép gỡ parent hay không)
-            // category.setParent(null);
+            category.setParent(null);
         }
 
         return categoryMapper.toResponse(categoryRepository.save(category));

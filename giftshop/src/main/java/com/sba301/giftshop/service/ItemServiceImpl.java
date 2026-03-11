@@ -1,12 +1,13 @@
 package com.sba301.giftshop.service;
 
 import com.sba301.giftshop.model.dto.request.ItemRequest;
+import com.sba301.giftshop.model.dto.request.UpdateItemRequest;
+import com.sba301.giftshop.model.dto.response.ItemDetailResponse;
 import com.sba301.giftshop.model.dto.response.ItemResponse;
 import com.sba301.giftshop.model.entity.Item;
 import com.sba301.giftshop.model.entity.Product;
 import com.sba301.giftshop.repository.ItemRepository;
 import com.sba301.giftshop.repository.ProductRepository;
-import com.sba301.giftshop.service.ItemService;
 import com.sba301.giftshop.util.mapper.ItemMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,7 +43,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional
-    public ItemResponse updateItemBatch(Long id, ItemRequest request) {
+    public ItemResponse updateItemBatch(Long id, UpdateItemRequest request) {
         Item item = itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy lô hàng"));
 
@@ -65,5 +66,10 @@ public class ItemServiceImpl implements ItemService {
         return availableItems.stream()
                 .mapToInt(Item::getCurrentQuantity)
                 .sum();
+    }
+
+    @Override
+    public List<ItemDetailResponse> getAllItems() {
+        return itemMapper.toDetailResponseList(itemRepository.findAll());
     }
 }

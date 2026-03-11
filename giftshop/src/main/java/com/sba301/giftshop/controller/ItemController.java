@@ -1,6 +1,7 @@
 package com.sba301.giftshop.controller;
 
 import com.sba301.giftshop.model.dto.request.ItemRequest;
+import com.sba301.giftshop.model.dto.request.UpdateItemRequest;
 import com.sba301.giftshop.model.dto.response.ResponseObject;
 import com.sba301.giftshop.service.ItemService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,14 @@ public class ItemController {
 
     private final ItemService itemService;
 
+    @GetMapping
+    public ResponseEntity<ResponseObject> getAllItems() {
+        return ResponseEntity.ok(ResponseObject.builder()
+                .code("200").message("Lấy danh sách lô hàng thành công").isSuccess(true).status(HttpStatus.OK)
+                .data(itemService.getAllItems())
+                .build());
+    }
+
     @PostMapping
     public ResponseEntity<ResponseObject> createItemBatch(@RequestBody ItemRequest request) {
         return new ResponseEntity<>(ResponseObject.builder()
@@ -24,7 +33,7 @@ public class ItemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseObject> updateItemBatch(@PathVariable Long id, @RequestBody ItemRequest request) {
+    public ResponseEntity<ResponseObject> updateItemBatch(@PathVariable Long id, @RequestBody UpdateItemRequest request) {
         return ResponseEntity.ok(ResponseObject.builder()
                 .code("200").message("Cập nhật lô hàng thành công").isSuccess(true).status(HttpStatus.OK)
                 .data(itemService.updateItemBatch(id, request))
