@@ -51,23 +51,36 @@ export default function UserManager() {
     } catch (error) { alert("Không thể lấy thông tin chi tiết"); }
   };
 
-  const openModal = async (user: any = null) => {
-    if (user) {
-      const res = await UserService.getUserById(user.id);
-      if (res.success) {
-        setEditingUser(res.data);
-        setFormData({
-          ...res.data,
-          password: '', // Cho phép nhập password mới nếu muốn đổi
-          dateOfBirth: res.data.dateOfBirth ? res.data.dateOfBirth.split('T')[0] : ''
-        });
-      }
-    } else {
-      setEditingUser(null);
-      setFormData(initialForm);
+  const openModal = async (user = null) => {
+  if (user) {
+    const res = await UserService.getUserById(user.id);
+    if (res.success) {
+      setEditingUser(res.data);
+      // Mapping sạch: Loại bỏ id, createdAt, updatedAt...
+      setFormData({
+        username: res.data.username || '',
+        email: res.data.email || '',
+        fullName: res.data.fullName || '',
+        phone: res.data.phone || '',
+        role: res.data.role || 'CUSTOMER',
+        isActive: res.data.isActive ?? true,
+        password: '', // Luôn để trống khi sửa
+        dateOfBirth: res.data.dateOfBirth ? res.data.dateOfBirth.split('T')[0] : '',
+        corporateProfile: res.data.corporateProfile ? {
+          companyName: res.data.corporateProfile.companyName || '',
+          taxId: res.data.corporateProfile.taxId || '',
+          addressReg: res.data.corporateProfile.addressReg || '',
+          creditLimit: res.data.corporateProfile.creditLimit || 0,
+          currentDebt: res.data.corporateProfile.currentDebt || 0
+        } : null
+      });
     }
-    setIsModalOpen(true);
-  };
+  } else {
+    setEditingUser(null);
+    setFormData(initialForm);
+  }
+  setIsModalOpen(true);
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
