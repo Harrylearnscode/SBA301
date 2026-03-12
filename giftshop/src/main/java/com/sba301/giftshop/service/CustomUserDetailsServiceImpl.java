@@ -23,12 +23,11 @@ public class CustomUserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
 
-        // Build a Spring Security User (implements UserDetails).
-        // Replace List.of() with mapped authorities from domainUser if available.
+        // Đã sửa: Map Role của user thành SimpleGrantedAuthority
         return org.springframework.security.core.userdetails.User
                 .withUsername(domainUser.getUsername())
                 .password(domainUser.getPasswordHash())
-                .authorities(List.of())
+                .authorities(List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + domainUser.getRole().name())))
                 .accountExpired(false)
                 .accountLocked(false)
                 .credentialsExpired(false)

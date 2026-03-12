@@ -13,7 +13,7 @@ public class ProductItemReponse {
     private Long id;
 
     // Sản phẩm đóng vai trò là gói quà (Set)
-    private ProductResponse customGift;
+//    private ProductResponse customGift;
 
     // Sản phẩm thành phần bên trong
     private ProductResponse product;

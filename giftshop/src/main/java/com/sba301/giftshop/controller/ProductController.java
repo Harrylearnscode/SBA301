@@ -10,7 +10,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -18,6 +22,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private Long getCurrentUserId() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -41,19 +46,43 @@ public class ProductController {
                 .build());
     }
 
-    @PostMapping
-    public ResponseEntity<ResponseObject> createProduct(@RequestBody ProductRequest request) {
-        return new ResponseEntity<>(ResponseObject.builder()
-                .code("201").message("Tạo sản phẩm thành công").isSuccess(true).status(HttpStatus.CREATED)
-                .data(productService.createProduct(request, getCurrentUserId()))
-                .build(), HttpStatus.CREATED);
+    @PostMapping(consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseObject> createProduct(
+            // Dòng này báo cho Swagger biết hãy vẽ giao diện JSON của ProductRequest
+            @Parameter(schema = @Schema(implementation = ProductRequest.class))
+            @RequestPart("product") String productJson,
+            @RequestPart(value = "image", required = false) MultipartFile image) throws JsonProcessingException {
+
+        // Java vẫn nhận String để tránh lỗi, rồi tự convert an toàn
+        ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
+
+        Long userId = getCurrentUserId();
+        return ResponseEntity.ok(ResponseObject.builder()
+                .code("201")
+                .message("Tạo sản phẩm thành công")
+                .data(productService.createProduct(request, image, userId))
+                .isSuccess(true)
+                .status(HttpStatus.CREATED)
+                .build());
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ResponseObject> updateProduct(@PathVariable Long id, @RequestBody ProductRequest request) {
+    @PutMapping(value = "/{id}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ResponseObject> updateProduct(
+            @PathVariable Long id,
+            // Thêm annotation tương tự cho hàm Update
+            @Parameter(schema = @Schema(implementation = ProductRequest.class))
+            @RequestPart("product") String productJson,
+            @RequestPart(value = "image", required = false) MultipartFile image
+    ) throws JsonProcessingException {
+
+        ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
+
         return ResponseEntity.ok(ResponseObject.builder()
-                .code("200").message("Cập nhật thành công").isSuccess(true).status(HttpStatus.OK)
-                .data(productService.updateProduct(id, request))
+                .code("200")
+                .message("Cập nhật sản phẩm thành công")
+                .data(productService.updateProduct(id, request, image))
+                .isSuccess(true)
+                .status(HttpStatus.OK)
                 .build());
     }
 
