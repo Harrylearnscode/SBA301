@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { 
   LayoutDashboard, Layers, Box, ShoppingCart, 
-  PackageSearch, FileText, LogOut, CheckCircle, Users // Thêm icon Users
+  PackageSearch, FileText, LogOut, CheckCircle, Users,
+  ShieldCheck // Thêm icon cho Policy
 } from 'lucide-react';
 import CategoryManager from './CategoryManagement';
 import ProductManager from './ProductManagement';
 import OrderManager from './OrderManagement';
 import ItemManager from './ItemManagement';
 import QuoteManager from './QuoteManagement';
-import UserManager from './UserManagement'; // Import component vừa tạo
+import UserManager from './UserManagement';
+import PolicyManager from './PolicyManagement'; // Import component Policy vừa tạo
 
 // --- MOCK DATA ---
 const STATS = [
   { label: 'Tổng Đơn Hàng', value: '1,250', icon: <ShoppingCart />, color: 'bg-blue-500' },
   { label: 'Doanh Thu', value: '450.000.000đ', icon: <CheckCircle />, color: 'bg-green-500' },
   { label: 'Yêu cầu Báo Giá', value: '45', icon: <FileText />, color: 'bg-orange-500' },
-  { label: 'Người Dùng', value: '850', icon: <Users />, color: 'bg-indigo-500' }, // Cập nhật stat ví dụ
+  { label: 'Người Dùng', value: '850', icon: <Users />, color: 'bg-indigo-500' },
 ];
 
 export default function AdminDashboard() {
@@ -23,12 +25,13 @@ export default function AdminDashboard() {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { id: 'categories', label: 'Quản lý Category', icon: <Layers size={20} /> },
-    { id: 'products', label: 'Quản lý Product', icon: <Box size={20} /> },
-    { id: 'orders', label: 'Quản lý Đơn hàng', icon: <ShoppingCart size={20} /> },
+    { id: 'categories', label: 'Quản lý Danh Mục (Categories)', icon: <Layers size={20} /> },
+    { id: 'products', label: 'Quản lý Sản Phẩm (Products)', icon: <Box size={20} /> },
+    { id: 'orders', label: 'Quản lý Đơn Hàng (Orders)', icon: <ShoppingCart size={20} /> },
     { id: 'items', label: 'Quản lý Kho (Items)', icon: <PackageSearch size={20} /> },
-    { id: 'quotes', label: 'Quản lý Báo giá (Quotes)', icon: <FileText size={20} /> },
-    { id: 'users', label: 'Quản lý Người dùng', icon: <Users size={20} /> }, // Thêm vào Menu
+    { id: 'quotes', label: 'Quản lý Báo Giá (Quotes)', icon: <FileText size={20} /> },
+    { id: 'users', label: 'Quản lý Người Dùng (Users)', icon: <Users size={20} /> },
+    { id: 'policies', label: 'Quản lý Chiết Khấu (Policies)', icon: <ShieldCheck size={20} /> }, // Thêm vào Menu
   ];
 
   return (
@@ -70,14 +73,15 @@ export default function AdminDashboard() {
             {activeTab === 'orders' && <OrderManager />}
             {activeTab === 'items' && <ItemManager />}
             {activeTab === 'quotes' && <QuoteManager />}
-            {activeTab === 'users' && <UserManager />} {/* Render UserManager ở đây */}
+            {activeTab === 'users' && <UserManager />}
+            {activeTab === 'policies' && <PolicyManager />} {/* Render PolicyManager ở đây */}
         </div>
       </main>
     </div>
   );
 }
 
-// --- SUB-PAGE: DASHBOARD ---
+// --- SUB-PAGE: DASHBOARD (Giữ nguyên) ---
 function DashboardStats() {
   return (
     <div className="animate-in fade-in duration-500">
@@ -98,13 +102,12 @@ function DashboardStats() {
         ))}
       </div>
 
-      {/* Có thể thêm biểu đồ hoặc danh sách hoạt động gần đây ở đây */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic">
-              Biểu đồ doanh thu (Placeholder)
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic uppercase font-black tracking-widest">
+              Biểu đồ doanh thu
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic">
-              Hoạt động gần đây (Placeholder)
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic uppercase font-black tracking-widest">
+              Hoạt động gần đây
           </div>
       </div>
     </div>
