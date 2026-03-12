@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+/* 1. Nhúng font Lora từ Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+/* 2. Ép các class font-serif của Tailwind sử dụng font Lora này */
+.font-serif {
+  font-family: 'Lora', serif !important;
+}
+
+/* 3. Đảm bảo toàn bộ văn bản hiển thị mượt mà */
+body {
+  font-family: 'Lora', serif; /* Thêm dòng này nếu bạn muốn toàn bộ web dùng Lora làm mặc định */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

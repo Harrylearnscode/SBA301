@@ -18,7 +18,6 @@ public class QuoteRequest {
     @AllArgsConstructor
     public static class QuoteItemRequest {
         private Long productId;     // ID sản phẩm thường (nếu có)
-        private Long customGiftId;  // ID sản phẩm custom (nếu có)
         private Integer quantity;   // Số lượng dự kiến mua
     }
 }
