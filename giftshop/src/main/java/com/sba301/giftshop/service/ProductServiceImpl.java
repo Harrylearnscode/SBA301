@@ -3,6 +3,7 @@ package com.sba301.giftshop.service;
 import com.sba301.giftshop.model.dto.request.ProductItemRequest;
 import com.sba301.giftshop.model.dto.request.ProductRequest;
 import com.sba301.giftshop.model.dto.response.ProductResponse;
+import com.sba301.giftshop.model.dto.response.ProductSumaryResponse;
 import com.sba301.giftshop.model.entity.Category;
 import com.sba301.giftshop.model.entity.Product;
 import com.sba301.giftshop.model.entity.ProductItem;
@@ -16,6 +17,7 @@ import com.sba301.giftshop.util.mapper.ProductMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -30,11 +32,11 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
 
     @Override
-    public List<ProductResponse> getAllProducts(Boolean onlyActive) {
+    public List<ProductSumaryResponse> getAllProducts(Boolean onlyActive) {
         List<Product> products = Boolean.TRUE.equals(onlyActive)
                 ? productRepository.findByIsActiveTrue()
                 : productRepository.findAll();
-        return productMapper.toResponseList(products);
+        return productMapper.toSummaryResponseList(products);
     }
 
     @Override
@@ -48,29 +50,29 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toResponse(product);
     }
 
+    // Thêm Inject R2StorageService vào đầu file
+    private final R2StorageService r2StorageService;
+
     @Override
     @Transactional
-    public ProductResponse createProduct(ProductRequest request, Long creatorId) {
+    public ProductResponse createProduct(ProductRequest request, MultipartFile image, Long creatorId) {
         User creator = userRepository.findById(creatorId).orElse(null);
         Category category = request.getCategoryId() != null
                 ? categoryRepository.findById(request.getCategoryId()).orElse(null)
                 : null;
 
-        Product product = Product.builder()
-                .name(request.getName())
-                .sku(request.getSku())
-                .basePrice(request.getBasePrice())
-                .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
-                .isGift(request.getIsGift() != null ? request.getIsGift() : false)
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .category(category)
-                .createdBy(creator)
-                .build();
+        Product productToSave = productMapper.toEntity(request);
+        productToSave.setCategory(category);
+        productToSave.setCreatedBy(creator);
 
-        Product savedProduct = productRepository.save(product);
+        // NẾU CÓ FILE ẢNH -> UPLOAD LÊN R2 VÀ LẤY URL GÁN VÀO PRODUCT
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = r2StorageService.uploadFile(image);
+            productToSave.setImageUrl(imageUrl);
+        }
 
-        // Xử lý lưu các sản phẩm thành phần nếu đây là Giỏ Quà
+        Product savedProduct = productRepository.save(productToSave);
+
         if (Boolean.TRUE.equals(savedProduct.getIsGift()) && request.getGiftComponents() != null) {
             saveGiftComponents(savedProduct, request.getGiftComponents());
         }
@@ -80,7 +82,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(Long id, ProductRequest request) {
+    public ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile image) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
@@ -93,13 +95,18 @@ public class ProductServiceImpl implements ProductService {
         product.setSku(request.getSku());
         product.setBasePrice(request.getBasePrice());
         product.setDescription(request.getDescription());
-        product.setImageUrl(request.getImageUrl());
         product.setIsGift(request.getIsGift());
         product.setIsActive(request.getIsActive());
 
+        // CHỈ UPLOAD ẢNH MỚI NẾU CÓ FILE TRUYỀN LÊN
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = r2StorageService.uploadFile(image);
+            product.setImageUrl(imageUrl);
+        }
+        // Nếu image rỗng, giữ nguyên imageUrl cũ trong DB
+
         Product updatedProduct = productRepository.save(product);
 
-        // Cập nhật các thành phần giỏ quà: Xóa cũ, thêm mới cho an toàn
         if (Boolean.TRUE.equals(updatedProduct.getIsGift()) && request.getGiftComponents() != null) {
             productItemRepository.deleteByCustomGiftId(updatedProduct.getId());
             saveGiftComponents(updatedProduct, request.getGiftComponents());
