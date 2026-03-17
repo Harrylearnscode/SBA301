@@ -24,19 +24,28 @@ const ProductService = {
     },
 
     // 3. Tạo mới sản phẩm (@PostMapping)
-    createProduct: async (productData: any) => {
+    createProduct: async (formData: FormData) => {
         try {
-            const response = await axiosInstance.post(API_ENDPOINTS.PRODUCT.GET_ALL, productData);
+            // Thêm cấu hình headers để ép Axios gửi đúng định dạng form-data
+            const response = await axiosInstance.post(API_ENDPOINTS.PRODUCT.CREATE, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             return response.data;
         } catch (error) {
             throw handleApiError(error);
         }
     },
 
-    // 4. Cập nhật sản phẩm (@PutMapping("/{id}"))
-    updateProduct: async (id: string | number, productData: any) => {
+    updateProduct: async (id: number, formData: FormData) => {
         try {
-            const response = await axiosInstance.put(API_ENDPOINTS.PRODUCT.GET_BY_ID(id), productData);
+            // Thêm cấu hình headers tương tự cho hàm Update
+            const response = await axiosInstance.put(API_ENDPOINTS.PRODUCT.UPDATE(id), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             return response.data;
         } catch (error) {
             throw handleApiError(error);

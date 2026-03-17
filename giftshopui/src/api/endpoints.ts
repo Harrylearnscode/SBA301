@@ -7,12 +7,12 @@
     },
 
     PRODUCT: {
-    GET_ALL: '/products',
-    GET_BY_ID: (id: string | number) => `/products/${id}`,
-    CREATE: '/products',
-    UPDATE: (id: string | number) => `/products/${id}`,
-    TOGGLE_ACTIVE: (id: string | number) => `/products/${id}/toggle-active`,
-},
+        GET_ALL: '/products',
+        GET_BY_ID: (id: string | number) => `/products/${id}`,
+        CREATE: '/products',
+        UPDATE: (id: string | number) => `/products/${id}`,
+        TOGGLE_ACTIVE: (id: string | number) => `/products/${id}/toggle-active`,
+    },
 
     CART: {
     GET_MY_CART: '/carts',

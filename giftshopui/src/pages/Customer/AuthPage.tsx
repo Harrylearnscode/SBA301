@@ -10,8 +10,15 @@ export default function AuthPage() {
   const navigate = useNavigate();
 
   const handleLoginSuccess = (token: string) => {
-    login(token);
-    navigate('/'); // Chuyển về trang chủ sau khi đăng nhập thành công
+    // 1. Nhận role từ hàm login trả về
+    const userRole = login(token);
+
+    // 2. Rẽ nhánh chuyển trang dựa trên Role
+    if (userRole === 'ADMIN' || userRole === 'ROLE_ADMIN') {
+      navigate('/admin/dashboard'); 
+    } else {
+      navigate('/'); // Chuyển về MasterPage cho Customer
+    }
   };
 
   return (
