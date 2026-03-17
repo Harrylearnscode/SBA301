@@ -12,7 +12,7 @@ interface AuthContextType {
   token: string | null;
   username: string | null;
   role: string | null;
-  login: (token: string) => void;
+  login: (token: string) => string | null; // Sửa dòng này
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -25,21 +25,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<string | null>(null);
 
   // Hàm xử lý giải mã token
-  const processToken = (jwtToken: string) => {
+  const processToken = (jwtToken: string): string | null => {
     try {
       const decoded = jwtDecode<DecodedToken>(jwtToken);
-      // Kiểm tra token hết hạn chưa
       if (decoded.exp * 1000 < Date.now()) {
         throw new Error('Token expired');
       }
       setUsername(decoded.sub);
-      // Trích xuất Role (ví dụ: "ROLE_CUSTOMER" hoặc "ROLE_ADMIN")
+      
       if (decoded.role && decoded.role.length > 0) {
-        setRole(decoded.role[0].authority);
+        const userRole = decoded.role[0].authority;
+        setRole(userRole);
+        return userRole; // Trả về role tại đây
       }
+      return null;
     } catch (error) {
       console.error("Invalid token:", error);
-      logout(); // Nếu token lỗi hoặc hết hạn thì force logout luôn
+      logout(); 
+      return null;
     }
   };
 
@@ -50,10 +53,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = (newToken: string) => {
+  const login = (newToken: string): string | null => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
-    processToken(newToken);
+    return processToken(newToken);
   };
 
   const logout = async () => {
