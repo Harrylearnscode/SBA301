@@ -103,4 +103,16 @@ public class UserController {
                 .status(HttpStatus.OK)
                 .build());
     }
+
+    @GetMapping("/{id}")
+public ResponseEntity<ResponseObject> getUserById(@PathVariable Long id) {
+    UserResponse user = userService.getUserById(id);
+    return ResponseEntity.ok(ResponseObject.builder()
+            .code("200")
+            .message("Lấy thông tin người dùng thành công")
+            .data(user)
+            .isSuccess(true)
+            .status(HttpStatus.OK)
+            .build());
+}
 }

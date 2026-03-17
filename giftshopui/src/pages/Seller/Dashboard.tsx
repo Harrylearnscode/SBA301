@@ -29,11 +29,11 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic">
-              Biểu đồ doanh thu (Placeholder)
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic uppercase font-black tracking-widest">
+              Biểu đồ doanh thu
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic">
-              Hoạt động gần đây (Placeholder)
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 h-64 flex items-center justify-center text-gray-300 italic uppercase font-black tracking-widest">
+              Hoạt động gần đây
           </div>
       </div>
     </div>
