@@ -18,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import com.sba301.giftshop.model.enums.Role;
+import java.math.BigDecimal;
+import java.util.stream.Collectors;
 
 import java.util.List;
 
@@ -36,7 +39,12 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products = Boolean.TRUE.equals(onlyActive)
                 ? productRepository.findByIsActiveTrue()
                 : productRepository.findAll();
-        return productMapper.toSummaryResponseList(products);
+
+        List<Product> filteredProducts = products.stream()
+                .filter(p -> p.getCreatedBy() == null || p.getCreatedBy().getRole() == Role.ADMIN)
+                .collect(Collectors.toList());
+
+        return productMapper.toSummaryResponseList(filteredProducts);
     }
 
     @Override
@@ -65,7 +73,27 @@ public class ProductServiceImpl implements ProductService {
         productToSave.setCategory(category);
         productToSave.setCreatedBy(creator);
 
-        // NẾU CÓ FILE ẢNH -> UPLOAD LÊN R2 VÀ LẤY URL GÁN VÀO PRODUCT
+        // --- LOGIC BẢO MẬT: TỰ ĐỘNG TÍNH GIÁ NẾU NGƯỜI TẠO LÀ CUSTOMER ---
+        if (creator != null && creator.getRole() == Role.CUSTOMER) {
+            BigDecimal totalSecurePrice = BigDecimal.ZERO;
+
+            // Tính tổng tiền dựa trên giá gốc trong Database
+            if (request.getGiftComponents() != null) {
+                for (ProductItemRequest comp : request.getGiftComponents()) {
+                    Product component = productRepository.findById(comp.getProductId())
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm thành phần"));
+
+                    BigDecimal lineTotal = component.getBasePrice().multiply(BigDecimal.valueOf(comp.getQuantity()));
+                    totalSecurePrice = totalSecurePrice.add(lineTotal);
+                }
+            }
+            // Ghi đè giá, ép kiểu thành giỏ quà và ẩn khỏi Shop
+            productToSave.setBasePrice(totalSecurePrice);
+            productToSave.setIsGift(true);
+            productToSave.setIsActive(false);
+        }
+
+        // Xử lý upload ảnh (nếu có)
         if (image != null && !image.isEmpty()) {
             String imageUrl = r2StorageService.uploadFile(image);
             productToSave.setImageUrl(imageUrl);
@@ -73,6 +101,7 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct = productRepository.save(productToSave);
 
+        // Lưu danh sách các món đồ vào Database
         if (Boolean.TRUE.equals(savedProduct.getIsGift()) && request.getGiftComponents() != null) {
             saveGiftComponents(savedProduct, request.getGiftComponents());
         }
