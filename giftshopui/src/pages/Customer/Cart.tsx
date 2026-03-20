@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ArrowLeft } from 'lucide-react';
+import { Trash2, ArrowLeft, X } from 'lucide-react';
 import CartService from '../../api/service/cart.service';
+import Toast from '../../components/ui/Toast';
 
 interface CartItem {
   id: number;
@@ -20,6 +21,9 @@ export default function Cart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
+  const [itemToDelete, setItemToDelete] = useState<{ id: number, name: string } | null>(null);
 
   const fetchCart = async () => {
     try {
@@ -62,18 +66,27 @@ export default function Cart() {
     }
   };
 
-  const handleRemoveItem = async (cartItemId: number) => {
-    if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?")) return;
+  // Hàm này giờ chỉ làm nhiệm vụ mở Modal
+  const handleRemoveItem = (cartItemId: number, productName: string) => {
+    setItemToDelete({ id: cartItemId, name: productName });
+  };
+
+  // HÀM MỚI: Xử lý xóa thực sự khi ấn "Đồng ý" trên Modal
+  const confirmRemoveItem = async () => {
+    if (!itemToDelete) return;
     
     try {
-      const res = await CartService.removeItem(cartItemId);
+      const res = await CartService.removeItem(itemToDelete.id);
       if (res.success) {
-        setCartItems(prev => prev.filter(item => item.id !== cartItemId));
+        setCartItems(prev => prev.filter(item => item.id !== itemToDelete.id));
+        setToast({ show: true, message: "Đã xóa sản phẩm khỏi giỏ hàng", type: "success" });
       } else {
-        alert(res.message || "Không thể xóa sản phẩm");
+        setToast({ show: true, message: res.message || "Không thể xóa sản phẩm", type: "error" });
       }
     } catch (err) {
-      alert("Lỗi kết nối máy chủ");
+      setToast({ show: true, message: "Lỗi kết nối máy chủ", type: "error" });
+    } finally {
+      setItemToDelete(null); // Đóng modal dù thành công hay thất bại
     }
   };
 
@@ -166,7 +179,10 @@ export default function Cart() {
 
                       {/* Cột 5: Nút xóa */}
                       <div className="col-span-1 flex justify-end">
-                        <button onClick={() => handleRemoveItem(item.id)} className="text-gray-400 hover:text-red-600 transition">
+                        <button 
+                          onClick={() => handleRemoveItem(item.id, item.product.name)} 
+                          className="text-gray-400 hover:text-red-600 transition"
+                        >
                           <Trash2 size={18} />
                         </button>
                       </div>
@@ -224,6 +240,40 @@ export default function Cart() {
           </div>
         )}
       </div>
+
+      {/* UI MODAL CONFIRM XÓA SẢN PHẨM TRONG GIỎ */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="p-6 text-center">
+                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Trash2 size={32} />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Xóa sản phẩm?</h3>
+                    <p className="text-gray-500 text-sm mb-6">
+                        Bạn có chắc chắn muốn bỏ <span className="font-bold text-gray-800">"{itemToDelete.name}"</span> ra khỏi giỏ hàng không?
+                    </p>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={() => setItemToDelete(null)} 
+                            className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
+                        >
+                            Giữ lại
+                        </button>
+                        <button 
+                            onClick={confirmRemoveItem} 
+                            className="flex-1 py-3 bg-[#b30000] text-white font-bold rounded-xl hover:bg-red-800 transition shadow-lg shadow-red-200"
+                        >
+                            Đồng ý xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* COMPONENT THÔNG BÁO TOAST */}
+      <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
     </div>
   );
 }

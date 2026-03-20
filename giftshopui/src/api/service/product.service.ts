@@ -69,7 +69,7 @@ const ProductService = {
             const response = await axiosInstance.get(`${API_ENDPOINTS.PRODUCT.GET_ALL}?onlyActive=true`);
             const data = response.data;
             
-            if (data.isSuccess && Array.isArray(data.data)) {
+            if (data.success && Array.isArray(data.data)) {
                 data.data = data.data
                     .filter((p: any) => String(p.id) !== String(currentProductId))
                     .slice(0, limit);
