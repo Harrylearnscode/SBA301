@@ -13,7 +13,7 @@ import java.util.List;
 public interface ItemRepository extends JpaRepository<Item, Long> {
     List<Item> findByProductId(Long productId);
 
-    // Lấy các lô hàng chưa hết hạn và còn tồn kho
-    @Query("SELECT i FROM Item i WHERE i.product.id = :productId AND i.expiredDate > :currentDate AND i.currentQuantity > 0 ORDER BY i.expiredDate ASC")
+    // Lấy các lô còn tồn kho và còn dùng được: không có hạn hoặc hạn >= hôm nay
+    @Query("SELECT i FROM Item i WHERE i.product.id = :productId AND (i.expiredDate IS NULL OR i.expiredDate >= :currentDate) AND i.currentQuantity > 0 ORDER BY i.expiredDate ASC")
     List<Item> findAvailableItems(@Param("productId") Long productId, @Param("currentDate") LocalDate currentDate);
 }

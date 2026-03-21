@@ -73,6 +73,11 @@ public class OrderController {
                 .build());
     }
 
+    @GetMapping("/all-orders")
+    public ResponseEntity<ResponseObject> getAllOrdersAlias() {
+        return getAllOrders();
+    }
+
     @PutMapping("/admin/{id}/status")
     public ResponseEntity<ResponseObject> updateOrderStatus(@PathVariable Long id, @RequestBody UpdateOrderStatusRequest request) {
         return ResponseEntity.ok(ResponseObject.builder()
@@ -88,4 +93,6 @@ public class OrderController {
                 .data(orderService.updatePaymentStatus(id, request))
                 .build());
     }
+
+    
 }

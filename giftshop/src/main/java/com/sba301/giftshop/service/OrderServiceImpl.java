@@ -4,6 +4,7 @@ import com.sba301.giftshop.model.dto.request.CheckoutRequest;
 import com.sba301.giftshop.model.dto.request.UpdateOrderStatusRequest;
 import com.sba301.giftshop.model.dto.request.UpdatePaymentStatusRequest;
 import com.sba301.giftshop.model.dto.response.OrderResponse;
+import com.sba301.giftshop.model.dto.response.PaymentResponse;
 import com.sba301.giftshop.model.entity.*;
 import com.sba301.giftshop.model.enums.OrderStatus;
 import com.sba301.giftshop.model.enums.PaymentStatus;
@@ -11,12 +12,12 @@ import com.sba301.giftshop.repository.ItemRepository;
 import com.sba301.giftshop.repository.OrderRepository;
 import com.sba301.giftshop.service.CartService;
 import com.sba301.giftshop.service.OrderService;
-import com.sba301.giftshop.service.PolicyService; // Import thêm PolicyService
+import com.sba301.giftshop.service.PolicyService; 
 import com.sba301.giftshop.util.mapper.OrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.Optional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -33,6 +34,7 @@ public class OrderServiceImpl implements OrderService {
     private final ItemRepository itemRepository;
     private final OrderMapper orderMapper;
     private final PolicyService policyService; // Tiêm PolicyService vào đây
+    private final PaymentService paymentService;
 
     @Override
     @Transactional
@@ -47,7 +49,6 @@ public class OrderServiceImpl implements OrderService {
         Order order = Order.builder()
                 .user(cart.getUser())
                 .shippingAddress(request.getShippingAddress())
-                .shipperPhoneNumber(request.getShipperPhoneNumber())
                 .status(OrderStatus.PENDING)
                 .payment(PaymentStatus.UNPAID)
                 .orderDate(LocalDateTime.now())
@@ -79,6 +80,8 @@ public class OrderServiceImpl implements OrderService {
             // Cộng dồn tổng tiền gốc và tổng số lượng
             rawTotalPrice = rawTotalPrice.add(product.getBasePrice().multiply(BigDecimal.valueOf(requiredQty)));
             totalItem += requiredQty;
+
+
         }
 
         // 4. --- TÍNH GIẢM GIÁ THEO CHÍNH SÁCH SỐ LƯỢNG ---
@@ -103,6 +106,11 @@ public class OrderServiceImpl implements OrderService {
         // 6. Làm rỗng giỏ hàng
         cartService.clearCart(userId);
 
+        PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId());
+        String payUrl = vnpayResponse.getPaymentUrl();
+
+        savedOrder.setPayUrl(payUrl);
+
         return orderMapper.toResponse(savedOrder);
     }
 
@@ -122,6 +130,19 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Bạn không có quyền xem đơn hàng này");
         }
         return orderMapper.toResponse(order);
+    }
+
+    public boolean updatePaymentStatusToPaid(Long orderId) {
+    Optional<Order> orderOpt = orderRepository.findById(orderId);
+
+    if (orderOpt.isEmpty()) {
+        return false;
+    }
+
+    Order order = orderOpt.get();
+    order.setPayment(PaymentStatus.PAID);
+    orderRepository.save(order);
+    return true;
     }
 
     @Override
@@ -210,4 +231,9 @@ public class OrderServiceImpl implements OrderService {
             itemRepository.save(item);
         }
     }
+
+    public Order findById(Long orderId) {
+    return orderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+}
 }

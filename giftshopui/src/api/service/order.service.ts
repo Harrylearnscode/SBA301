@@ -83,7 +83,7 @@ const OrderService = {
     /**
      * Cập nhật trạng thái thanh toán
      */
-    updatePaymentStatus: async (id: string | number, request: { paymentStatus: string }) => {
+    updatePaymentStatus: async (id: string | number, request: { payment: string }) => {
         try {
             const response = await axiosInstance.put(API_ENDPOINTS.ORDER.UPDATE_PAYMENT(id), request);
             return response.data;
