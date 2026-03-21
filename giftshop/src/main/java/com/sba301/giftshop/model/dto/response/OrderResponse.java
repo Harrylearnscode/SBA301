@@ -26,5 +26,7 @@ public class OrderResponse {
     private LocalDateTime updateDate;
     private Integer discountApplied;
     private PaymentStatus payment;
+    private String payUrl;
+    private LocalDateTime paidTime;
     private List<OrderDetailReponse> orderDetails;
 }

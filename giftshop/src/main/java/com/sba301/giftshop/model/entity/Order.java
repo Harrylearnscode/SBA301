@@ -31,9 +31,6 @@ public class Order {
     @Column(name = "shipping_address")
     private String shippingAddress;
 
-    @Column(name = "shipper_phone_number")
-    private String shipperPhoneNumber;
-
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 
@@ -51,6 +48,12 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus payment;
+
+    @Column(name = "pay_url", length = 2000)
+    private String payUrl;
+
+    @Column(name = "paid_time")
+    private LocalDateTime paidTime;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderDetail> orderDetails;

@@ -4,8 +4,10 @@ import com.sba301.giftshop.model.dto.request.CheckoutRequest;
 import com.sba301.giftshop.model.dto.request.UpdateOrderStatusRequest;
 import com.sba301.giftshop.model.dto.request.UpdatePaymentStatusRequest;
 import com.sba301.giftshop.model.dto.response.OrderResponse;
+import com.sba301.giftshop.model.entity.*;
 
 import java.util.List;
+
 
 public interface OrderService {
     // Dành cho Khách hàng
@@ -18,4 +20,6 @@ public interface OrderService {
     List<OrderResponse> getAllOrders();
     OrderResponse updateOrderStatus(Long orderId, UpdateOrderStatusRequest request);
     OrderResponse updatePaymentStatus(Long orderId, UpdatePaymentStatusRequest request);
+    public boolean updatePaymentStatusToPaid(Long orderId);
+    Order findById(Long orderId);
 }
