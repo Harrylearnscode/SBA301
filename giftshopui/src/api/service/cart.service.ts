@@ -43,6 +43,16 @@ const CartService = {
         } catch (error) {
             throw handleApiError(error);
         }
+    },
+
+    clearCart: async () => {
+        try {
+            // Gọi phương thức DELETE tới /api/carts
+            const response = await axiosInstance.delete(API_ENDPOINTS.CART.CLEAR);
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
     }
 };
 

@@ -21,8 +21,6 @@ public class QuoteProductResponse {
 
     private ProductResponse product;
 
-    private ProductResponse customGift;
-
     private Integer quantity;
 
     private BigDecimal quotedPrice;

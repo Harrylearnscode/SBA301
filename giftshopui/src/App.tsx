@@ -18,6 +18,9 @@ import UserManagement from './pages/Seller/UserManagement';
 import ItemManagement from './pages/Seller/ItemManagement';
 import QuoteManagement from './pages/Seller/QuoteManagement';
 import AdminProductDetail from './pages/Seller/AdminProductDetail';
+import History from './pages/Customer/History';
+import QuoteDetail from './pages/Customer/QuoteDetail';
+import OrderDetail from './pages/Customer/OrderDetail';
 
 export default function App() {
     return (
@@ -36,6 +39,9 @@ export default function App() {
                             <Route path="cart" element={<Cart />} />
                             <Route path="profile" element={<UserProfile />} />
                             <Route path="custom-product" element={<CustomProduct />} />
+                            <Route path='history' element={<History />} />
+                            <Route path='quote/:id' element={<QuoteDetail />} />
+                            <Route path='order/:id' element={<OrderDetail />} />
                         </Route>
 
                         <Route path="*" element={<MasterPage />} />

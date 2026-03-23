@@ -23,12 +23,6 @@ public class QuoteProduct {
     @JoinColumn(name = "product_id")
     private Product product;
 
-    // Trong diagram có custom_gift_id nối với PRODUCTS
-    // Tùy logic, có thể gift cũng là product hoặc là trường riêng
-    @ManyToOne
-    @JoinColumn(name = "custom_gift_id")
-    private Product customGift;
-
     private Integer quantity;
 
     @Column(name = "quoted_price")

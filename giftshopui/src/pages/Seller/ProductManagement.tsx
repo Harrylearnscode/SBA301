@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, CheckCircle, XCircle, Image as ImageIcon } from 'lucide-react';
-import ProductService from '../../api/service/product.service';
+import { Plus, Edit, Trash2, CheckCircle, XCircle, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';import ProductService from '../../api/service/product.service';
 import Toast from '../../components/ui/Toast';
 import CategoryService from '../../api/service/category.service';
 
@@ -13,6 +12,8 @@ export default function ProductManagement() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [categories, setCategories] = useState<any[]>([]);
+
+  const [itemToToggle, setItemToToggle] = useState<{ id: number, name: string, isActive: boolean } | null>(null);
   
   // State cho Form
   const [formData, setFormData] = useState({
@@ -39,7 +40,17 @@ export default function ProductManagement() {
       setLoading(true);
       const res = await ProductService.getAllProducts(false); // Lấy tất cả, kể cả Inactive
       if (res.success) {
-        setProducts(res.data);
+        // THÊM LOGIC SẮP XẾP TẠI ĐÂY:
+        // Đưa sản phẩm có isActive = true lên trước, false xuống sau
+        const sortedProducts = res.data.sort((a: any, b: any) => {
+          if (a.isActive === b.isActive) {
+            // Nếu cùng trạng thái, có thể xếp theo ID mới nhất lên trước (Tùy chọn)
+            return b.id - a.id; 
+          }
+          return a.isActive ? -1 : 1; 
+        });
+        
+        setProducts(sortedProducts);
       }
     } catch (error) {
       setToast({ show: true, message: 'Lỗi khi tải danh sách sản phẩm', type: 'error' });
@@ -173,17 +184,24 @@ export default function ProductManagement() {
     }
   };
 
-  // Hàm Toggle Active (Xóa mềm)
-  const handleToggleActive = async (id: number) => {
-    if (!window.confirm('Bạn có chắc muốn thay đổi trạng thái sản phẩm này?')) return;
+  const handleToggleActiveClick = (id: number, name: string, isActive: boolean) => {
+    setItemToToggle({ id, name, isActive });
+  };
+
+  const confirmToggleActive = async () => {
+    if (!itemToToggle) return;
     try {
-      const res = await ProductService.toggleActiveStatus(id);
+      const res = await ProductService.toggleActiveStatus(itemToToggle.id);
       if (res.success) {
-        setToast({ show: true, message: 'Đã cập nhật trạng thái!', type: 'success' });
+        setToast({ show: true, message: 'Đã cập nhật trạng thái sản phẩm!', type: 'success' });
         fetchProducts();
+      } else {
+        setToast({ show: true, message: res.message || 'Không thể thay đổi trạng thái', type: 'error' });
       }
     } catch (error) {
-      setToast({ show: true, message: 'Không thể thay đổi trạng thái', type: 'error' });
+      setToast({ show: true, message: 'Lỗi kết nối máy chủ', type: 'error' });
+    } finally {
+      setItemToToggle(null);
     }
   };
 
@@ -252,6 +270,19 @@ export default function ProductManagement() {
                         title="Xem chi tiết & Cập nhật"
                       >
                         Chi tiết
+                      </button>
+
+                      {/* NÚT ẨN/HIỆN SẢN PHẨM NHANH */}
+                      <button 
+                        onClick={() => handleToggleActiveClick(p.id, p.name, p.isActive)}
+                        className={`px-3 py-1 rounded transition flex items-center gap-1 ${p.isActive ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-green-600 bg-green-50 hover:bg-green-100'}`}
+                        title={p.isActive ? "Ẩn sản phẩm khỏi Shop" : "Hiển thị lại lên Shop"}
+                      >
+                        {p.isActive ? (
+                          <><EyeOff size={16} /> <span className="hidden md:inline">Ẩn</span></>
+                        ) : (
+                          <><Eye size={16} /> <span className="hidden md:inline">Hiện</span></>
+                        )}
                       </button>
                     </td>
                   </tr>
@@ -395,6 +426,41 @@ export default function ProductManagement() {
       )}
 
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+      {/* UI MODAL CONFIRM ẨN/HIỆN SẢN PHẨM */}
+      {itemToToggle && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${itemToToggle.isActive ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'}`}>
+                {itemToToggle.isActive ? <EyeOff size={32} /> : <Eye size={32} />}
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {itemToToggle.isActive ? 'Ẩn sản phẩm này?' : 'Hiển thị sản phẩm này?'}
+              </h3>
+              <p className="text-gray-500 text-sm mb-6">
+                Bạn có chắc chắn muốn {itemToToggle.isActive ? 'ẩn' : 'hiển thị lại'} sản phẩm <br/>
+                <span className="font-bold text-gray-800">"{itemToToggle.name}"</span> trên trang Shop không?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setItemToToggle(null)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmToggleActive}
+                  className={`flex-1 py-3 text-white font-bold rounded-xl transition shadow-lg ${itemToToggle.isActive ? 'bg-[#b30000] hover:bg-red-800 shadow-red-200' : 'bg-green-600 hover:bg-green-700 shadow-green-200'}`}
+                >
+                  Đồng ý {itemToToggle.isActive ? 'Ẩn' : 'Hiện'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

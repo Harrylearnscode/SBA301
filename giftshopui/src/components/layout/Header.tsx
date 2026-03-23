@@ -26,7 +26,7 @@ export default function Header() {
             <Link to="/" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Trang Chủ</Link>
             <Link to="/shop" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Bộ Sưu Tập</Link>
             <Link to="/custom-product" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Thiết Kế</Link>
-            <Link to="/quote" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Doanh Nghiệp</Link>
+            <Link to="/history" className="text-gray-600 text-sm font-semibold uppercase hover:text-[#b30000] transition">Lịch sử</Link>
           </nav>
 
           <div className="flex items-center space-x-6 text-gray-700">
