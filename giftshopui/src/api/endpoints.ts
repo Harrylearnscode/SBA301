@@ -19,7 +19,7 @@
     ADD_ITEM: '/carts/items',
     UPDATE_ITEM: (itemId: string | number) => `/carts/items/${itemId}`,
     REMOVE_ITEM: (itemId: string | number) => `/carts/items/${itemId}`,
-    CLEAR: '/carts/clear'
+    CLEAR: '/carts'
     },
 
     QUOTE: {
@@ -67,6 +67,7 @@
         CREATE: '/users',
         UPDATE: (id: string | number) => `/users/${id}`,
         DELETE: (id: string | number) => `/users/${id}`,
+        CURRENT: '/users/me',
     },
 
     POLICY: {

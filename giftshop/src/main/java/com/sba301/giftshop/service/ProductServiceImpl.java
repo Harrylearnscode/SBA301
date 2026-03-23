@@ -74,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
         productToSave.setCreatedBy(creator);
 
         // --- LOGIC BẢO MẬT: TỰ ĐỘNG TÍNH GIÁ NẾU NGƯỜI TẠO LÀ CUSTOMER ---
-        if (creator != null && creator.getRole() == Role.CUSTOMER) {
+        if (creator != null) {
             BigDecimal totalSecurePrice = BigDecimal.ZERO;
 
             // Tính tổng tiền dựa trên giá gốc trong Database
@@ -89,6 +89,11 @@ public class ProductServiceImpl implements ProductService {
             }
             // Ghi đè giá, ép kiểu thành giỏ quà và ẩn khỏi Shop
             productToSave.setBasePrice(totalSecurePrice);
+            productToSave.setIsGift(true);
+            productToSave.setIsActive(false);
+        }
+
+        if (creator != null && creator.getRole() == Role.CUSTOMER) {
             productToSave.setIsGift(true);
             productToSave.setIsActive(false);
         }

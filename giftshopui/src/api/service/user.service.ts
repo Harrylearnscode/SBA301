@@ -1,3 +1,4 @@
+
 import { handleApiError } from '../../utils/api.helper';
 import axiosInstance from '../axios.config';
 import API_ENDPOINTS from '../endpoints';
@@ -68,6 +69,15 @@ const UserService = {
             throw handleApiError(error);
         }
     },
+
+    getMyProfile: async () => {
+        try {
+            const response = await axiosInstance.get(API_ENDPOINTS.USER.CURRENT);
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    }
 };
 
 export default UserService;

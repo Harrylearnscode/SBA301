@@ -5,6 +5,7 @@ import com.sba301.giftshop.model.entity.Cart;
 import com.sba301.giftshop.model.entity.User;
 import com.sba301.giftshop.repository.CartRepository;
 import com.sba301.giftshop.repository.UserRepository;
+import com.sba301.giftshop.repository.CartItemRepository;
 import com.sba301.giftshop.service.CartService;
 import com.sba301.giftshop.util.mapper.CartMapper;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
     private final UserRepository userRepository;
+    private final CartItemRepository cartItemRepository;
     private final CartMapper cartMapper;
 
     @Override
@@ -45,7 +47,11 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public void clearCart(Long userId) {
         Cart cart = getCartEntityByUserId(userId);
-        cart.getCartItems().clear(); // Nhờ CascadeType.ALL, xóa list này sẽ tự xóa dữ liệu trong bảng CART_ITEMS
-        cartRepository.save(cart);
+
+        if (!cart.getCartItems().isEmpty()) {
+            cartItemRepository.deleteAll(cart.getCartItems());
+            cart.getCartItems().clear();
+            cartRepository.save(cart);
+        }
     }
 }

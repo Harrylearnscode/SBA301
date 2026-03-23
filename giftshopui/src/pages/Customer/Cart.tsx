@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ArrowLeft, X } from 'lucide-react';
 import CartService from '../../api/service/cart.service';
 import Toast from '../../components/ui/Toast';
+import QuoteService from '../../api/service/quote.service';
 
 interface CartItem {
   id: number;
@@ -24,6 +25,7 @@ export default function Cart() {
 
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
   const [itemToDelete, setItemToDelete] = useState<{ id: number, name: string } | null>(null);
+  const [isRequestingQuote, setIsRequestingQuote] = useState(false);
 
   const fetchCart = async () => {
     try {
@@ -94,6 +96,41 @@ export default function Cart() {
 
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + (item.product.basePrice * item.quantity), 0);
+  };
+
+  //Xử lý gửi yêu cầu báo giá
+  const handleRequestQuote = async () => {
+    if (cartItems.length === 0) return;
+    
+    try {
+      setIsRequestingQuote(true);
+      
+      // Map dữ liệu từ cartItems sang định dạng QuoteRequest mà Backend cần
+      const payload = {
+        items: cartItems.map(item => ({
+          productId: item.product.id,
+          quantity: item.quantity
+        }))
+      };
+
+      const res = await QuoteService.createQuote(payload);
+      
+      if (res.success) {
+        setToast({ show: true, message: "Đã gửi yêu cầu báo giá thành công!", type: "success" });
+        
+        // Gọi API dọn sạch giỏ hàng vì sản phẩm đã được chuyển sang luồng báo giá
+        await CartService.clearCart(); 
+        setCartItems([]); // Xóa UI giỏ hàng ngay lập tức
+        
+        // Tạm thời để user ở lại trang. Sau này có trang Quote sẽ dùng navigate('/quotes')
+      } else {
+        setToast({ show: true, message: res.message || "Không thể gửi yêu cầu", type: "error" });
+      }
+    } catch (err) {
+      setToast({ show: true, message: "Lỗi kết nối máy chủ", type: "error" });
+    } finally {
+      setIsRequestingQuote(false);
+    }
   };
 
   if (loading) {
@@ -232,6 +269,20 @@ export default function Cart() {
                   className="w-full bg-[#8b0000] text-white py-4 rounded font-bold uppercase tracking-wider hover:bg-red-900 transition flex justify-center items-center gap-2 shadow-lg shadow-red-900/20"
                 >
                   THANH TOÁN NGAY
+                </button>
+
+                <div className="relative flex items-center py-5">
+                  <div className="flex-grow border-t border-gray-200"></div>
+                  <span className="flex-shrink-0 mx-4 text-gray-400 text-xs uppercase font-bold tracking-widest">Hoặc</span>
+                  <div className="flex-grow border-t border-gray-200"></div>
+                </div>
+
+                <button 
+                  onClick={handleRequestQuote}
+                  disabled={isRequestingQuote || cartItems.length === 0}
+                  className="w-full bg-gray-900 text-[#facc15] py-4 rounded font-bold uppercase tracking-wider hover:bg-black transition flex justify-center items-center gap-2 shadow-lg shadow-gray-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRequestingQuote ? "ĐANG GỬI..." : "YÊU CẦU BÁO GIÁ SỈ"}
                 </button>
                 
               </div>
