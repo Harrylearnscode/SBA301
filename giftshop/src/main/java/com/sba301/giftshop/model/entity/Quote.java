@@ -40,4 +40,8 @@ public class Quote {
     @OneToMany
     @JoinColumn(name = "quote_id")
     private java.util.List<QuoteProduct> quoteProducts;
+
+    @OneToOne
+    @JoinColumn(name = "order_id", unique = true)
+    private Order order;
 }

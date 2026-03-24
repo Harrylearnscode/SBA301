@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, CheckCircle, XCircle, FileText, AlertCircle } from 'lucide-react';
 import QuoteService from '../../api/service/quote.service';
@@ -42,6 +42,15 @@ export default function QuoteDetail() {
             const res = await QuoteService.replyToQuote(id!, isAccepted);
             if (res.success) {
                 setToast({ show: true, message: isAccepted ? 'Đã chốt giá thành công!' : 'Đã từ chối báo giá', type: 'success' });
+
+                if (isAccepted) {
+                    const payUrl = res.data?.orderResponse?.payUrl;
+                    if (payUrl) {
+                        window.location.href = payUrl;
+                        return;
+                    }
+                }
+
                 fetchQuoteDetail(); // Refresh lại data
             }
         } catch (error) {

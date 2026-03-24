@@ -32,9 +32,8 @@ export default function Header() {
           <div className="flex items-center space-x-6 text-gray-700">
             {isAuthenticated ? (
               <>
-                <Link to="/cart" className="relative hover:text-[#b30000] transition">
+                <Link to="/cart" className="hover:text-[#b30000] transition">
                   <ShoppingBag size={22} />
-                  <span className="absolute -top-1.5 -right-2 bg-[#b30000] text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center">0</span>
                 </Link>
                 <Link to="/profile" className="hover:text-[#b30000] transition">
                   <User size={22} />

@@ -1,4 +1,4 @@
-package com.sba301.giftshop.service;
+﻿package com.sba301.giftshop.service;
 
 import com.sba301.giftshop.model.dto.request.ProvideQuoteRequest;
 import com.sba301.giftshop.model.dto.request.QuoteRequest;
@@ -7,11 +7,19 @@ import com.sba301.giftshop.model.entity.Product;
 import com.sba301.giftshop.model.entity.Quote;
 import com.sba301.giftshop.model.entity.QuoteProduct;
 import com.sba301.giftshop.model.entity.User;
+import com.sba301.giftshop.model.entity.Order;
+import com.sba301.giftshop.model.entity.OrderDetail;
+import com.sba301.giftshop.model.entity.Item;
 import com.sba301.giftshop.model.enums.QuoteStatus;
+import com.sba301.giftshop.model.enums.OrderStatus;
+import com.sba301.giftshop.model.enums.PaymentStatus;
+import com.sba301.giftshop.model.dto.response.PaymentResponse;
 import com.sba301.giftshop.repository.ProductRepository;
 import com.sba301.giftshop.repository.QuoteProductRepository;
 import com.sba301.giftshop.repository.QuoteRepository;
 import com.sba301.giftshop.repository.UserRepository;
+import com.sba301.giftshop.repository.OrderRepository;
+import com.sba301.giftshop.repository.ItemRepository;
 import com.sba301.giftshop.service.QuoteService;
 import com.sba301.giftshop.util.mapper.QuoteMapper;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +41,9 @@ public class QuoteServiceImpl implements QuoteService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final QuoteMapper quoteMapper;
+    private final OrderRepository orderRepository;
+    private final ItemRepository itemRepository;
+    private final PaymentService paymentService;
 
     @Override
     @Transactional
@@ -104,7 +116,53 @@ public class QuoteServiceImpl implements QuoteService {
 
         if (isAccepted) {
             quote.setStatus(QuoteStatus.ACCEPTED);
-            // TODO: (Tùy chọn) Gọi hàm tạo Order từ danh sách QuoteProduct ở đây
+            
+            // Tạo Order từ danh sách QuoteProduct
+            Order order = Order.builder()
+                    .user(quote.getUser())
+                    .shippingAddress("")
+                    .status(OrderStatus.PENDING)
+                    .payment(PaymentStatus.UNPAID)
+                    .orderDate(LocalDateTime.now())
+                    .updateDate(LocalDateTime.now())
+                    .orderDetails(new ArrayList<>())
+                    .build();
+
+            int totalItem = 0;
+
+            // Tạo OrderDetail từ QuoteProduct và trừ tồn kho
+            for (QuoteProduct quoteProduct : quote.getQuoteProducts()) {
+                OrderDetail orderDetail = OrderDetail.builder()
+                        .order(order)
+                        .product(quoteProduct.getProduct())
+                        .unitPrice(quoteProduct.getQuotedPrice())
+                        .quantity(quoteProduct.getQuantity())
+                        .build();
+
+                order.getOrderDetails().add(orderDetail);
+                totalItem += quoteProduct.getQuantity();
+
+                // Trừ tồn kho theo FIFO
+                deductInventory(quoteProduct.getProduct().getId(), quoteProduct.getQuantity());
+            }
+
+            // SET CÁC THÔNG SỐ TỔNG KẾT VÀO ORDER
+            order.setTotalPrice(quote.getTotalPrice());
+            order.setTotalItem(totalItem);
+            order.setDiscountApplied(0); // Giá đã được thỏa thuận bởi Sales
+
+            // Lưu đơn hàng
+            Order savedOrder = orderRepository.save(order);
+
+            // Tạo link thanh toán
+            PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId());
+            String payUrl = vnpayResponse.getPaymentUrl();
+            savedOrder.setPayUrl(payUrl);
+            savedOrder.setPaidTime(null);
+            savedOrder = orderRepository.save(savedOrder);
+
+            // Liên kết 1-1 giữa Quote và Order
+            quote.setOrder(savedOrder);
         } else {
             quote.setStatus(QuoteStatus.REJECTED);
         }
@@ -189,5 +247,29 @@ public class QuoteServiceImpl implements QuoteService {
         quote.setStatus(QuoteStatus.QUOTED); // Chuyển trạng thái để khách hàng thấy được giá
 
         return quoteMapper.toResponse(quoteRepository.save(quote));
+    }
+
+    // --- HÀM PHỤ TRỢ XỬ LÝ TỒN KHO ---
+    private void deductInventory(Long productId, int requiredQty) {
+        List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
+        int totalAvailable = availableItems.stream().mapToInt(Item::getCurrentQuantity).sum();
+
+        if (totalAvailable < requiredQty) {
+            throw new RuntimeException("Sản phẩm ID " + productId + " không đủ số lượng tồn kho");
+        }
+
+        int remainingToDeduct = requiredQty;
+        for (Item item : availableItems) {
+            if (remainingToDeduct == 0) break;
+
+            if (item.getCurrentQuantity() >= remainingToDeduct) {
+                item.setCurrentQuantity(item.getCurrentQuantity() - remainingToDeduct);
+                remainingToDeduct = 0;
+            } else {
+                remainingToDeduct -= item.getCurrentQuantity();
+                item.setCurrentQuantity(0);
+            }
+            itemRepository.save(item);
+        }
     }
 }
