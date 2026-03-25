@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ItemDetailResponse {
+    private Long productId;
     private String productName;
     private Long id;
     private LocalDate expiredDate;

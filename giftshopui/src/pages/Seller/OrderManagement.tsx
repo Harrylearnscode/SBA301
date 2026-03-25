@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ShoppingBag, Calendar, ChevronDown, Clock, 
-  Phone, Package, Tag, RefreshCw
+  Phone, Package, Tag, RefreshCw, Eye, X
 } from 'lucide-react';
 import OrderService from '../../api/service/order.service';
 
 export default function OrderManager() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -58,6 +60,53 @@ export default function OrderManager() {
     } catch (error) {
       alert("Lỗi cập nhật thanh toán");
     }
+  };
+
+  // Logic workflow: chỉ cho phép chuyển đến trạng thái tiếp theo
+  const getAvailableStatuses = (currentStatus: string) => {
+    const statusFlow: Record<string, string[]> = {
+      'PENDING': ['PROCESSING', 'CANCELLED'],
+      'PROCESSING': ['SHIPPED', 'CANCELLED'],
+      'SHIPPED': ['DELIVERED', 'CANCELLED'],
+      'DELIVERED': ['CANCELLED'],
+      'CANCELLED': []
+    };
+    return statusFlow[currentStatus] || [];
+  };
+
+  // Xem chi tiết đơn hàng
+  const handleViewDetails = async (orderId: string | number) => {
+    try {
+      setDetailsLoading(true);
+      
+      // Thử gọi API admin trước
+      try {
+        const res = await OrderService.getOrderByIdAdmin(orderId);
+        if (res.success) {
+          setSelectedOrderDetails(res.data);
+          return;
+        }
+      } catch (adminError) {
+        console.log("Admin endpoint không hoạt động, fallback sang local data");
+      }
+
+      // Fallback: Lấy từ dữ liệu local đã fetch
+      const orderData = orders.find((o: any) => o.id === orderId);
+      if (orderData) {
+        setSelectedOrderDetails(orderData);
+      } else {
+        alert("Không tìm thấy đơn hàng");
+      }
+    } catch (error) {
+      console.error("Lỗi tải chi tiết đơn hàng:", error);
+      alert("Lỗi tải chi tiết đơn hàng");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const closeDetailsModal = () => {
+    setSelectedOrderDetails(null);
   };
 
   // Helper định dạng ngày giờ
@@ -148,15 +197,24 @@ export default function OrderManager() {
 
                     {/* Total Item & Discount Applied */}
                     <td className="p-5">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1.5 font-black text-gray-800 text-xs">
-                          <Package size={14} className="text-amber-500" />
-                          <span>{order.totalItem} món</span>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 font-black text-gray-800 text-xs">
+                            <Package size={14} className="text-amber-500" />
+                            <span>{order.totalItem} món</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-rose-600 font-black text-[10px] bg-rose-50 px-2 py-0.5 rounded-md w-fit border border-rose-100">
+                            <Tag size={12} />
+                            <span>-{order.discountApplied?.toLocaleString()}%</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 text-rose-600 font-black text-[10px] bg-rose-50 px-2 py-0.5 rounded-md w-fit border border-rose-100">
-                          <Tag size={12} />
-                          <span>-{order.discountApplied?.toLocaleString()}%</span>
-                        </div>
+                        <button
+                          onClick={() => handleViewDetails(order.id)}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase transition-colors"
+                        >
+                          <Eye size={12} />
+                          Xem chi tiết
+                        </button>
                       </div>
                     </td>
 
@@ -195,11 +253,12 @@ export default function OrderManager() {
                             onChange={(e) => handleOrderStatusChange(order.id, e.target.value)}
                             className={`appearance-none w-full pl-3 pr-8 py-2 rounded-xl border text-[11px] font-black uppercase outline-none cursor-pointer transition-all shadow-sm ${getOrderStatusStyle(order.status)}`}
                           >
-                            <option value="PENDING">Chờ xác nhận</option>
-                            <option value="PROCESSING">Đang chuẩn bị</option>
-                            <option value="SHIPPED">Đang giao hàng</option>
-                            <option value="DELIVERED">Đã hoàn thành</option>
-                            <option value="CANCELLED">Đã hủy đơn</option>
+                            <option value={order.status}>{order.status === 'PENDING' ? 'Chờ xác nhận' : order.status === 'PROCESSING' ? 'Đang chuẩn bị' : order.status === 'SHIPPED' ? 'Đang giao hàng' : order.status === 'DELIVERED' ? 'Đã hoàn thành' : 'Đã hủy đơn'}</option>
+                            {getAvailableStatuses(order.status).map(status => (
+                              <option key={status} value={status}>
+                                {status === 'PROCESSING' ? 'Đang chuẩn bị' : status === 'SHIPPED' ? 'Đang giao hàng' : status === 'DELIVERED' ? 'Đã hoàn thành' : 'Đã hủy đơn'}
+                              </option>
+                            ))}
                           </select>
                           <ChevronDown size={14} className="absolute right-2 top-3 opacity-40 pointer-events-none" />
                         </div>
@@ -212,6 +271,150 @@ export default function OrderManager() {
           </table>
         </div>
       </div>
+
+      {/* Modal Chi tiết đơn hàng */}
+      {selectedOrderDetails && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-auto">
+            {/* Header Modal */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center border-b">
+              <div>
+                <h3 className="text-2xl font-black">Chi tiết đơn hàng #{selectedOrderDetails.id}</h3>
+                <p className="text-blue-100 text-sm">Tổng cộng: {selectedOrderDetails.totalItem} sản phẩm</p>
+              </div>
+              <button
+                onClick={closeDetailsModal}
+                className="hover:bg-blue-800 p-2 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Loading State */}
+            {detailsLoading && (
+              <div className="p-20 text-center text-gray-400 font-black animate-pulse">
+                ĐANG TẢI...
+              </div>
+            )}
+
+            {/* Content */}
+            {!detailsLoading && selectedOrderDetails.orderDetails && (
+              <div className="p-6 space-y-6">
+                {selectedOrderDetails.orderDetails.map((detail: any, idx: number) => {
+                  const product = detail.product;
+                  const isGift = product?.isGift === true;
+
+                  return (
+                    <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
+                      {/* Sản phẩm chính hoặc Quà tặng */}
+                      <div className="bg-gray-50 p-4">
+                        <div className="flex gap-4">
+                          {/* Hình ảnh */}
+                          {product?.imageUrl && (
+                            <div className="w-24 h-24 shrink-0 bg-white rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+
+                          {/* Thông tin sản phẩm */}
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start gap-4">
+                              <div>
+                                <h4 className="font-black text-gray-900 text-sm">
+                                  {product?.name}
+                                </h4>
+                                {product?.sku && (
+                                  <p className="text-[11px] text-gray-500 font-bold">
+                                    SKU: {product.sku}
+                                  </p>
+                                )}
+                                {isGift && (
+                                  <span className="inline-block mt-2 px-2 py-1 bg-rose-100 text-rose-700 text-[10px] font-black rounded-md border border-rose-200">
+                                    🎁 Quà tặng
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                {product?.basePrice && (
+                                  <p className="font-black text-blue-700 text-sm">
+                                    {product.basePrice?.toLocaleString()}đ
+                                  </p>
+                                )}
+                                {detail.quantity && (
+                                  <p className="text-[11px] text-gray-500 font-bold">
+                                    x{detail.quantity}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Nếu là Quà tặng, hiển thị các sản phẩm bên trong */}
+                      {isGift && product?.giftComponents && product.giftComponents.length > 0 && (
+                        <div className="border-t border-gray-200 p-4 bg-white">
+                          <h5 className="font-black text-gray-800 text-xs uppercase mb-3 flex items-center gap-2">
+                            <span className="text-rose-600">Sản phẩm trong quà tặng:</span>
+                          </h5>
+                          <div className="space-y-2">
+                            {product.giftComponents.map((giftComponent: any, gIdx: number) => {
+                              const giftItem = giftComponent.product;
+                              return (
+                                <div key={gIdx} className="flex gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                                  {giftItem?.imageUrl && (
+                                    <img
+                                      src={giftItem.imageUrl}
+                                      alt={giftItem.name}
+                                      className="w-12 h-12 rounded object-cover shrink-0"
+                                    />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-gray-800 text-[11px] truncate">
+                                      {giftItem?.name}
+                                    </p>
+                                    {giftItem?.sku && (
+                                      <p className="text-[10px] text-gray-500">SKU: {giftItem.sku}</p>
+                                    )}
+                                    {giftItem?.basePrice && (
+                                      <p className="font-black text-blue-600 text-[10px]">
+                                        {giftItem.basePrice?.toLocaleString()}đ
+                                      </p>
+                                    )}
+                                    {giftComponent?.quantity && (
+                                      <p className="text-[10px] text-gray-600 font-bold">
+                                        Số lượng: x{giftComponent.quantity}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex gap-2 justify-end">
+              <button
+                onClick={closeDetailsModal}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-bold text-sm transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

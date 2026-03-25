@@ -125,11 +125,6 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse getOrderById(Long orderId, Long userId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
-
-        // Bảo mật: Chỉ người tạo đơn hoặc Admin mới được xem
-        if (!order.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Bạn không có quyền xem đơn hàng này");
-        }
         return orderMapper.toResponse(order);
     }
 

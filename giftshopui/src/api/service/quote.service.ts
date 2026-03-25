@@ -33,11 +33,34 @@ const QuoteService = {
         }
     },
 
-    // Trả lời báo giá (chấp nhận hoặc từ chối)
-    replyToQuote: async (id: string | number, isAccepted: boolean) => {
+    // Đồng ý báo giá và gửi địa chỉ giao hàng
+    acceptQuote: async (id: string | number, request: { shippingAddress: string }) => {
         try {
             const response = await axiosInstance.post(
-                `${API_ENDPOINTS.QUOTE.REPLY(id)}?isAccepted=${isAccepted}`
+                API_ENDPOINTS.QUOTE.REPLY(id),
+                {},
+                {
+                    params: {
+                        isAccepted: true,
+                        shippingAddress: request.shippingAddress
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    // Từ chối báo giá
+    rejectQuote: async (id: string | number) => {
+        try {
+            const response = await axiosInstance.post(
+                API_ENDPOINTS.QUOTE.REPLY(id),
+                {},
+                {
+                    params: { isAccepted: false }
+                }
             );
             return response.data;
         } catch (error) {

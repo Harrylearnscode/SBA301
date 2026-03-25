@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, MapPin, Phone, Package, XCircle, Receipt } from 'lucide-react';
 import OrderService from '../../api/service/order.service';
+import UserService from '../../api/service/user.service';
+import ProductService from '../../api/service/product.service';
 import Toast from '../../components/ui/Toast';
 
 // Bộ từ điển trạng thái
@@ -24,14 +26,25 @@ export default function OrderDetail() {
     const navigate = useNavigate();
     
     const [order, setOrder] = useState<any>(null);
+    const [userPhone, setUserPhone] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
     const fetchOrderDetail = async () => {
         try {
             setLoading(true);
-            const res = await OrderService.getOrderById(id!); //
-            if (res.success) setOrder(res.data);
+            const [orderRes, profileRes] = await Promise.all([
+                OrderService.getOrderById(id!),
+                UserService.getMyProfile()
+            ]);
+
+            if (orderRes.success) {
+                setOrder(orderRes.data);
+            }
+
+            if (profileRes.success && profileRes.data?.phone) {
+                setUserPhone(profileRes.data.phone);
+            }
         } catch (error) {
             setToast({ show: true, message: 'Lỗi tải thông tin đơn hàng', type: 'error' });
         } finally {
@@ -55,6 +68,24 @@ export default function OrderDetail() {
             }
         } catch (error) {
             setToast({ show: true, message: 'Lỗi hệ thống khi hủy đơn', type: 'error' });
+        }
+    };
+
+    const handleViewProductDetail = async (productId?: number) => {
+        if (!productId) {
+            setToast({ show: true, message: 'Không tìm thấy sản phẩm', type: 'error' });
+            return;
+        }
+
+        try {
+            const res = await ProductService.getProductById(productId);
+            if (res.success) {
+                navigate(`/product/${productId}`);
+            } else {
+                setToast({ show: true, message: res.message || 'Không tìm thấy sản phẩm', type: 'error' });
+            }
+        } catch (error) {
+            setToast({ show: true, message: 'Không thể mở chi tiết sản phẩm', type: 'error' });
         }
     };
 
@@ -96,7 +127,7 @@ export default function OrderDetail() {
                             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Thông tin nhận hàng</h3>
                             <div className="space-y-2 text-gray-700">
                                 <p className="flex items-start gap-2"><MapPin size={18} className="text-gray-400 shrink-0 mt-0.5" /> <span>{order.shippingAddress}</span></p>
-                                <p className="flex items-center gap-2"><Phone size={18} className="text-gray-400 shrink-0" /> <span>{order.shipperPhoneNumber}</span></p>
+                                <p className="flex items-center gap-2"><Phone size={18} className="text-gray-400 shrink-0" /> <span>{userPhone}</span></p>
                             </div>
                         </div>
                         <div>
@@ -115,7 +146,11 @@ export default function OrderDetail() {
                         </h3>
                         <div className="space-y-4">
                             {order.orderDetails?.map((item: any) => (
-                                <div key={item.id} className="flex gap-4 items-center p-4 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition">
+                                <div
+                                    key={item.id}
+                                    className="flex gap-4 items-center p-4 border border-gray-100 rounded-lg bg-white shadow-sm hover:shadow-md transition cursor-pointer"
+                                    onClick={() => handleViewProductDetail(item.product?.id)}
+                                >
                                     <img src={item.product?.imageUrl || 'https://placehold.co/100'} alt={item.product?.name} className="w-16 h-16 object-cover rounded border border-gray-200" />
                                     <div className="flex-1">
                                         <p className="font-bold text-gray-800 line-clamp-1">{item.product?.name}</p>

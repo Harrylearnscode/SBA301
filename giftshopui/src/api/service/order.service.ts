@@ -43,6 +43,18 @@ const OrderService = {
     },
 
     /**
+     * Lấy chi tiết đơn hàng theo ID (Dành cho Admin)
+     */
+    getOrderByIdAdmin: async (id: string | number) => {
+        try {
+            const response = await axiosInstance.get(API_ENDPOINTS.ORDER.GET_BY_ID_ADMIN(id));
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    /**
      * Hủy đơn hàng
      */
     cancelOrder: async (id: string | number) => {

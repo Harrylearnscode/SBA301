@@ -3,28 +3,19 @@ package com.sba301.giftshop.service;
 import com.sba301.giftshop.model.dto.request.ProvideQuoteRequest;
 import com.sba301.giftshop.model.dto.request.QuoteRequest;
 import com.sba301.giftshop.model.dto.response.QuoteResponse;
-import com.sba301.giftshop.model.entity.Product;
-import com.sba301.giftshop.model.entity.Quote;
-import com.sba301.giftshop.model.entity.QuoteProduct;
-import com.sba301.giftshop.model.entity.User;
-import com.sba301.giftshop.model.entity.Order;
-import com.sba301.giftshop.model.entity.OrderDetail;
-import com.sba301.giftshop.model.entity.Item;
+import com.sba301.giftshop.model.entity.*;
 import com.sba301.giftshop.model.enums.QuoteStatus;
 import com.sba301.giftshop.model.enums.OrderStatus;
 import com.sba301.giftshop.model.enums.PaymentStatus;
 import com.sba301.giftshop.model.dto.response.PaymentResponse;
-import com.sba301.giftshop.repository.ProductRepository;
-import com.sba301.giftshop.repository.QuoteProductRepository;
-import com.sba301.giftshop.repository.QuoteRepository;
-import com.sba301.giftshop.repository.UserRepository;
-import com.sba301.giftshop.repository.OrderRepository;
-import com.sba301.giftshop.repository.ItemRepository;
+import com.sba301.giftshop.repository.*;
 import com.sba301.giftshop.service.QuoteService;
 import com.sba301.giftshop.util.mapper.QuoteMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.sba301.giftshop.model.entity.ProductItem;
+import com.sba301.giftshop.repository.ProductItemRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -44,6 +35,7 @@ public class QuoteServiceImpl implements QuoteService {
     private final OrderRepository orderRepository;
     private final ItemRepository itemRepository;
     private final PaymentService paymentService;
+    private final ProductItemRepository productItemRepository;
 
     @Override
     @Transactional
@@ -103,7 +95,7 @@ public class QuoteServiceImpl implements QuoteService {
 
     @Override
     @Transactional
-    public QuoteResponse replyToQuote(Long quoteId, Long userId, boolean isAccepted) {
+    public QuoteResponse replyToQuote(Long quoteId, Long userId, boolean isAccepted, String shippingAddress) {
         Quote quote = quoteRepository.findById(quoteId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu tư vấn"));
 
@@ -120,7 +112,7 @@ public class QuoteServiceImpl implements QuoteService {
             // Tạo Order từ danh sách QuoteProduct
             Order order = Order.builder()
                     .user(quote.getUser())
-                    .shippingAddress("")
+                    .shippingAddress(shippingAddress)
                     .status(OrderStatus.PENDING)
                     .payment(PaymentStatus.UNPAID)
                     .orderDate(LocalDateTime.now())
@@ -251,6 +243,35 @@ public class QuoteServiceImpl implements QuoteService {
 
     // --- HÀM PHỤ TRỢ XỬ LÝ TỒN KHO ---
     private void deductInventory(Long productId, int requiredQty) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm ID " + productId));
+
+        if (Boolean.TRUE.equals(product.getIsGift())) {
+            List<ProductItem> components = productItemRepository.findByCustomGiftId(productId);
+            if (components == null || components.isEmpty()) {
+                throw new RuntimeException("Sản phẩm quà ID " + productId + " không có thành phần");
+            }
+
+            for (ProductItem comp : components) {
+                Long compProductId = comp.getProduct().getId();
+                int neededQty = comp.getQuantity() * requiredQty;
+
+                List<Item> availableItems = itemRepository.findAvailableItems(compProductId, LocalDate.now());
+                int totalAvailable = availableItems.stream().mapToInt(Item::getCurrentQuantity).sum();
+
+                if (totalAvailable < neededQty) {
+                    throw new RuntimeException("Sản phẩm thành phần ID " + compProductId
+                            + " không đủ tồn kho cho gói quà ID " + productId);
+                }
+
+                deductFromItems(compProductId, neededQty);
+            }
+        } else {
+            deductFromItems(productId, requiredQty);
+        }
+    }
+
+    private void deductFromItems(Long productId, int requiredQty) {
         List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
         int totalAvailable = availableItems.stream().mapToInt(Item::getCurrentQuantity).sum();
 
@@ -262,11 +283,12 @@ public class QuoteServiceImpl implements QuoteService {
         for (Item item : availableItems) {
             if (remainingToDeduct == 0) break;
 
-            if (item.getCurrentQuantity() >= remainingToDeduct) {
-                item.setCurrentQuantity(item.getCurrentQuantity() - remainingToDeduct);
+            int current = item.getCurrentQuantity() == null ? 0 : item.getCurrentQuantity();
+            if (current >= remainingToDeduct) {
+                item.setCurrentQuantity(current - remainingToDeduct);
                 remainingToDeduct = 0;
             } else {
-                remainingToDeduct -= item.getCurrentQuantity();
+                remainingToDeduct -= current;
                 item.setCurrentQuantity(0);
             }
             itemRepository.save(item);

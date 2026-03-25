@@ -17,6 +17,7 @@ export default function QuoteDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [quote, setQuote] = useState<any>(null);
+    const [shippingAddress, setShippingAddress] = useState('');
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
@@ -37,9 +38,16 @@ export default function QuoteDetail() {
     }, [id]);
 
     const handleReply = async (isAccepted: boolean) => {
+        if (isAccepted && !shippingAddress.trim()) {
+            setToast({ show: true, message: 'Vui lòng nhập địa chỉ giao hàng', type: 'error' });
+            return;
+        }
+
         if (!window.confirm(`Bạn có chắc muốn ${isAccepted ? 'ĐỒNG Ý' : 'TỪ CHỐI'} mức giá này?`)) return;
         try {
-            const res = await QuoteService.replyToQuote(id!, isAccepted);
+            const res = isAccepted
+                ? await QuoteService.acceptQuote(id!, { shippingAddress: shippingAddress.trim() })
+                : await QuoteService.rejectQuote(id!);
             if (res.success) {
                 setToast({ show: true, message: isAccepted ? 'Đã chốt giá thành công!' : 'Đã từ chối báo giá', type: 'success' });
 
@@ -136,6 +144,21 @@ export default function QuoteDetail() {
                                 <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                                     <AlertCircle size={12} className="text-red-500" /> Báo giá có hiệu lực đến: {new Date(quote.validUntil).toLocaleDateString('vi-VN')}
                                 </p>
+                            )}
+                            {quote.status === 'QUOTED' && (
+                                <div className="mt-4">
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                        Địa chỉ giao hàng <span className="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        value={shippingAddress}
+                                        onChange={(e) => setShippingAddress(e.target.value)}
+                                        placeholder="Nhập địa chỉ giao hàng của bạn..."
+                                        rows={3}
+                                        className="w-full md:w-90 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b30000] focus:border-transparent text-sm"
+                                        required
+                                    />
+                                </div>
                             )}
                         </div>
 

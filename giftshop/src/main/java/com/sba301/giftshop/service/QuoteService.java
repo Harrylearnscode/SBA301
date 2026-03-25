@@ -11,7 +11,7 @@ public interface QuoteService {
     QuoteResponse createQuote(Long userId, QuoteRequest request);
     List<QuoteResponse> getMyQuotes(Long userId);
     QuoteResponse getQuoteById(Long quoteId, Long userId);
-    QuoteResponse replyToQuote(Long quoteId, Long userId, boolean isAccepted); // Khách chốt đơn hoặc từ chối
+    QuoteResponse replyToQuote(Long quoteId, Long userId, boolean isAccepted, String shippingAddress); // Khách chốt đơn hoặc từ chối
     QuoteResponse cancelQuote(Long quoteId, Long userId); // Khách tự hủy khi chưa xử lý
 
     // --- Dành cho Nhân viên Sale / Admin ---

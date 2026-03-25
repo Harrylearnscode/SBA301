@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, X, Package, Calendar, Hash, Layers } from 'lucide-react';
+import { Plus, Edit, X, Package, Calendar, Hash, Layers, ChevronDown } from 'lucide-react';
 import ItemService from '../../api/service/item.service';
 import ProductService from '../../api/service/product.service';
 
@@ -8,6 +8,7 @@ export default function ItemManager() {
   const [products, setProducts] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -15,6 +16,27 @@ export default function ItemManager() {
     initialQuantity: 0,
     expiredDate: ''
   });
+
+  // Nhóm items theo productId: chỉ gộp khi productId hợp lệ và giống nhau
+  const groupedItemsMap = items.reduce((acc: any, item: any) => {
+    const rawProductId = item.productId ?? item.product?.id;
+    const hasValidProductId = rawProductId !== null && rawProductId !== undefined && rawProductId !== '';
+    const groupKey = hasValidProductId ? `product-${String(rawProductId)}` : `item-${String(item.id)}`;
+
+    if (!acc[groupKey]) {
+      acc[groupKey] = {
+        groupKey,
+        productId: hasValidProductId ? Number(rawProductId) : null,
+        productName: item.productName || item.product?.name || `Item #${item.id}`,
+        items: []
+      };
+    }
+
+    acc[groupKey].items.push(item);
+    return acc;
+  }, {});
+
+  const groupedItems = Object.values(groupedItemsMap);
 
   const fetchData = async () => {
     try {
@@ -51,6 +73,21 @@ export default function ItemManager() {
     setIsModalOpen(true);
   };
 
+  const viewProductBatches = (groupKey: string) => {
+    setSelectedGroupKey(selectedGroupKey === groupKey ? null : groupKey);
+  };
+
+  const openAddBatchModal = (productId: number) => {
+    setEditingId(null);
+    setFormData({
+      productId: String(productId),
+      batchCode: '',
+      initialQuantity: 0,
+      expiredDate: ''
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -79,6 +116,16 @@ export default function ItemManager() {
     }
   };
 
+  // Tính tổng số lượng và hiện tại cho mỗi sản phẩm
+  const productStats = (group: any) => {
+    const batches = group?.items || [];
+    return {
+      totalInitial: batches.reduce((sum: number, b: any) => sum + (b.initialQuantity || 0), 0),
+      totalCurrent: batches.reduce((sum: number, b: any) => sum + (b.currentQuantity || 0), 0),
+      batchCount: batches.length
+    };
+  };
+
   return (
     <div className="space-y-6 text-sm">
       {/* Header */}
@@ -95,41 +142,91 @@ export default function ItemManager() {
         </button>
       </div>
 
-      {/* Table */}
+      {/* Table - Danh sách sản phẩm */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 text-gray-600 uppercase text-[11px] font-bold tracking-wider">
+              <th className="p-4 border-b"></th>
               <th className="p-4 border-b">Tên sản phẩm</th>
-              <th className="p-4 border-b">Batch Code</th>
-              <th className="p-4 border-b text-center">SL Nhập</th>
-              <th className="p-4 border-b text-center">SL Hiện tại</th>
-              <th className="p-4 border-b">Hạn sử dụng</th>
+              <th className="p-4 border-b text-center">Số lô hàng</th>
+              <th className="p-4 border-b text-center">Tổng SL Nhập</th>
+              <th className="p-4 border-b text-center">Tổng SL Hiện tại</th>
               <th className="p-4 border-b text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {items.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="p-4 font-bold text-gray-900">{item.productName}</td>
-                <td className="p-4">
-                  <span className="px-2 py-1 bg-gray-50 text-gray-600 rounded font-mono text-xs border border-gray-200">
-                    {item.batchCode}
-                  </span>
-                </td>
-                <td className="p-4 text-center text-blue-600">{item.initialQuantity}</td>
-                <td className="p-4 text-center font-bold text-gray-900">{item.currentQuantity}</td>
-                <td className="p-4 text-gray-600">{new Date(item.expiredDate).toLocaleDateString('vi-VN')}</td>
-                <td className="p-4 text-right">
-                  <button 
-                    onClick={() => openModal(item)} 
-                    className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                  >
-                    <Edit size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {groupedItems.map((group: any) => {
+              const isExpanded = selectedGroupKey === group.groupKey;
+              const stats = productStats(group);
+              
+              return (
+                <React.Fragment key={group.groupKey}>
+                  {/* Row Sản phẩm */}
+                  <tr className="hover:bg-blue-50 transition-colors cursor-pointer">
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => viewProductBatches(group.groupKey)}
+                        className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      >
+                        <ChevronDown size={18} className="text-blue-600" />
+                      </button>
+                    </td>
+                    <td className="p-4 font-bold text-gray-900">{group.productName}</td>
+                    <td className="p-4 text-center">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                        {stats.batchCount} lô
+                      </span>
+                    </td>
+                    <td className="p-4 text-center text-blue-600 font-bold">{stats.totalInitial}</td>
+                    <td className="p-4 text-center font-bold text-gray-900">{stats.totalCurrent}</td>
+                    <td className="p-4 text-right">
+                      {group.productId !== null && (
+                        <button
+                          onClick={() => openAddBatchModal(group.productId)}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Thêm lô hàng"
+                        >
+                          <Plus size={18} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Chi tiết các lô hàng */}
+                  {isExpanded && (
+                    <>
+                      {group.items.map((item: any) => (
+                        <tr key={item.id} className="bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <td colSpan={1}></td>
+                          <td className="p-4 pl-12 text-gray-600">
+                            <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded font-mono text-xs border border-gray-300">
+                              {item.batchCode}
+                            </span>
+                          </td>
+                          <td colSpan={1}></td>
+                          <td className="p-4 text-center text-blue-600">{item.initialQuantity}</td>
+                          <td className="p-4 text-center font-bold text-gray-900">{item.currentQuantity}</td>
+                          <td className="p-4 text-right">
+                            <div className="flex items-center gap-2 justify-end">
+                              <span className="text-[10px] text-gray-500">
+                                Hạn: {new Date(item.expiredDate).toLocaleDateString('vi-VN')}
+                              </span>
+                              <button 
+                                onClick={() => openModal(item)} 
+                                className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                              >
+                                <Edit size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
