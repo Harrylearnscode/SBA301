@@ -10,9 +10,11 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ItemMapper {
+    @Mapping(source = "product.id", target = "productId")
     ItemResponse toResponse(Item item);
     List<ItemResponse> toResponseList(List<Item> items);
 
+    @Mapping(source = "product.id", target = "productId")
     @Mapping(source = "product.name", target = "productName")
     ItemDetailResponse toDetailResponse(Item item);
     List<ItemDetailResponse> toDetailResponseList(List<Item> items);

@@ -28,6 +28,7 @@ export default function Cart() {
   const [itemToDelete, setItemToDelete] = useState<{ id: number, name: string } | null>(null);
   const [isRequestingQuote, setIsRequestingQuote] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState('');
 
   const fetchCart = async () => {
     try {
@@ -103,6 +104,10 @@ export default function Cart() {
   // Xử lý thanh toán (Checkout)
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
+    if (!shippingAddress.trim()) {
+      setToast({ show: true, message: "Vui lòng nhập địa chỉ giao hàng", type: "error" });
+      return;
+    }
     
     try {
       setIsCheckingOut(true);
@@ -117,7 +122,8 @@ export default function Cart() {
         })),
         totalAmount: calculateTotal(),
         shippingFee: 0, // Miễn phí vận chuyển
-        discountAmount: 0
+        discountAmount: 0,
+        shippingAddress: shippingAddress.trim()
       };
 
       const res = await OrderService.checkout(payload);
@@ -300,10 +306,6 @@ export default function Cart() {
                     <span className="font-bold text-gray-900">{formatPrice(calculateTotal())}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Mã giảm giá:</span>
-                    <span className="text-[#b30000] font-medium">-0đ</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span>Phí vận chuyển:</span>
                     <span className="text-green-600 font-medium">Miễn phí</span>
                   </div>
@@ -313,7 +315,21 @@ export default function Cart() {
                   <span className="font-bold text-gray-900">TỔNG CỘNG:</span>
                   <span className="text-xl font-bold text-[#b30000]">{formatPrice(calculateTotal())}</span>
                 </div>
-                <p className="text-right text-[10px] text-gray-400 mb-8 italic">(Đã bao gồm VAT)</p>
+                <p className="text-right text-[10px] text-gray-400 mb-6 italic">(Đã bao gồm VAT)</p>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Địa chỉ giao hàng(Yêu cầu với thanh toán ngay) <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(e.target.value)}
+                    placeholder="Nhập địa chỉ giao hàng của bạn..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#b30000] focus:border-transparent text-sm"
+                    required
+                  />
+                </div>
 
                 <button 
                   onClick={handleCheckout}

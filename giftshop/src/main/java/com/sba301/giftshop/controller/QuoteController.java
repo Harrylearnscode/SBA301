@@ -9,8 +9,11 @@ import com.sba301.giftshop.service.QuoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.file.attribute.UserPrincipal;
 
 @RestController
 @RequestMapping("/api/quotes")
@@ -56,14 +59,22 @@ public class QuoteController {
                 .build());
     }
 
-    @PostMapping("/{id}/reply")
-    public ResponseEntity<ResponseObject> replyToQuote(@PathVariable Long id, @RequestParam boolean isAccepted) {
-        String message = isAccepted ? "Bạn đã đồng ý với báo giá" : "Bạn đã từ chối báo giá";
+    @PostMapping("/{quoteId}/reply")
+    public ResponseEntity<ResponseObject> replyToQuote(
+            @PathVariable Long quoteId,
+            @RequestParam boolean isAccepted,
+            @RequestParam(required = false) String shippingAddress,
+            @AuthenticationPrincipal UserPrincipal user
+    ) {
         return ResponseEntity.ok(ResponseObject.builder()
-                .code("200").message(message).isSuccess(true).status(HttpStatus.OK)
-                .data(quoteService.replyToQuote(id, getCurrentUserId(), isAccepted))
+                .code("200")
+                .message(isAccepted ? "Chấp nhận báo giá thành công" : "Từ chối báo giá thành công")
+                .isSuccess(true)
+                .status(HttpStatus.OK)
+                .data(quoteService.replyToQuote(quoteId, getCurrentUserId(), isAccepted, shippingAddress))
                 .build());
     }
+
 
     @PostMapping("/{id}/cancel")
     public ResponseEntity<ResponseObject> cancelQuote(@PathVariable Long id) {

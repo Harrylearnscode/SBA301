@@ -57,6 +57,7 @@
         CANCEL: (id: string | number) => `/orders/${id}/cancel`,
         // Admin
         GET_ALL_ADMIN: '/orders/admin',
+        GET_BY_ID_ADMIN: (id: string | number) => `/orders/admin/${id}`,
         UPDATE_STATUS: (id: string | number) => `/orders/admin/${id}/status`,
         UPDATE_PAYMENT: (id: string | number) => `/orders/admin/${id}/payment`,
     },
