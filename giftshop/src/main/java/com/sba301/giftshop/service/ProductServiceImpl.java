@@ -73,12 +73,19 @@ public class ProductServiceImpl implements ProductService {
         productToSave.setCategory(category);
         productToSave.setCreatedBy(creator);
 
-        // --- LOGIC BẢO MẬT: TỰ ĐỘNG TÍNH GIÁ NẾU NGƯỜI TẠO LÀ CUSTOMER ---
-        if (creator != null) {
-            BigDecimal totalSecurePrice = BigDecimal.ZERO;
+        // Xác định xem đây có phải là Giỏ quà không
+        // (Do Admin tick chọn isGift = true từ UI, hoặc do Khách hàng tự thiết kế)
+        boolean isCustomer = creator != null && creator.getRole() == Role.CUSTOMER;
+        boolean isGiftProduct = Boolean.TRUE.equals(request.getIsGift()) || isCustomer;
 
-            // Tính tổng tiền dựa trên giá gốc trong Database
-            if (request.getGiftComponents() != null) {
+        // --- LOGIC: TỰ ĐỘNG TÍNH GIÁ NẾU LÀ GIỎ QUÀ ---
+        if (isGiftProduct) {
+            productToSave.setIsGift(true);
+
+            // CHỈ tự động tính và ghi đè giá NẾU có chọn các món đồ thành phần
+            if (request.getGiftComponents() != null && !request.getGiftComponents().isEmpty()) {
+                BigDecimal totalSecurePrice = BigDecimal.ZERO;
+
                 for (ProductItemRequest comp : request.getGiftComponents()) {
                     Product component = productRepository.findById(comp.getProductId())
                             .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm thành phần"));
@@ -86,15 +93,15 @@ public class ProductServiceImpl implements ProductService {
                     BigDecimal lineTotal = component.getBasePrice().multiply(BigDecimal.valueOf(comp.getQuantity()));
                     totalSecurePrice = totalSecurePrice.add(lineTotal);
                 }
+                // Ghi đè giá bằng tổng tiền các món
+                productToSave.setBasePrice(totalSecurePrice);
             }
-            // Ghi đè giá, ép kiểu thành giỏ quà và ẩn khỏi Shop
-            productToSave.setBasePrice(totalSecurePrice);
-            productToSave.setIsGift(true);
-            productToSave.setIsActive(false);
+            // NẾU KHÔNG CÓ THÀNH PHẦN: Hệ thống sẽ tự động giữ nguyên basePrice
+            // mà Admin đã nhập tay (được map từ request sang productToSave trước đó).
         }
 
-        if (creator != null && creator.getRole() == Role.CUSTOMER) {
-            productToSave.setIsGift(true);
+        // Logic bảo mật riêng: Nếu khách hàng tự tạo, bắt buộc ẩn khỏi trang chủ Shop
+        if (isCustomer) {
             productToSave.setIsActive(false);
         }
 

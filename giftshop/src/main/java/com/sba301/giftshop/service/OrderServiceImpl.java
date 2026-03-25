@@ -10,9 +10,8 @@ import com.sba301.giftshop.model.enums.OrderStatus;
 import com.sba301.giftshop.model.enums.PaymentStatus;
 import com.sba301.giftshop.repository.ItemRepository;
 import com.sba301.giftshop.repository.OrderRepository;
-import com.sba301.giftshop.service.CartService;
-import com.sba301.giftshop.service.OrderService;
-import com.sba301.giftshop.service.PolicyService; 
+import com.sba301.giftshop.repository.ProductItemRepository;
+import com.sba301.giftshop.repository.ProductRepository;
 import com.sba301.giftshop.util.mapper.OrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +34,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final PolicyService policyService; // Tiêm PolicyService vào đây
     private final PaymentService paymentService;
+    private final ProductRepository productRepository;
+    private final ProductItemRepository productItemRepository;
 
     @Override
     @Transactional
@@ -200,6 +201,39 @@ public class OrderServiceImpl implements OrderService {
     // --- CÁC HÀM PHỤ TRỢ XỬ LÝ TỒN KHO ---
 
     private void deductInventory(Long productId, int requiredQty) {
+        // Lấy sản phẩm để kiểm tra có phải Gift hay không
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm ID " + productId));
+
+        if (Boolean.TRUE.equals(product.getIsGift())) {
+            // Nếu là gói quà thì trừ theo các thành phần
+            List<ProductItem> components = productItemRepository.findByCustomGiftId(productId);
+            if (components == null || components.isEmpty()) {
+                throw new RuntimeException("Sản phẩm quà ID " + productId + " không có thành phần");
+            }
+            for (ProductItem comp : components) {
+                Long compProductId = comp.getProduct().getId();
+                int neededQty = comp.getQuantity() * requiredQty; // số lượng thực tế cần trừ của thành phần
+
+                // Kiểm tra tổng tồn kho của thành phần
+                List<Item> availableItems = itemRepository.findAvailableItems(compProductId, LocalDate.now());
+                int totalAvailable = availableItems.stream().mapToInt(Item::getCurrentQuantity).sum();
+
+                if (totalAvailable < neededQty) {
+                    throw new RuntimeException("Sản phẩm thành phần ID " + compProductId + " không đủ tồn kho cho gói quà ID " + productId);
+                }
+
+                // Trừ tồn kho cho thành phần
+                deductFromItems(compProductId, neededQty);
+            }
+        } else {
+            // Trường hợp sản phẩm bình thường
+            deductFromItems(productId, requiredQty);
+        }
+    }
+
+    // Tách ra để tái sử dụng logic trừ theo FIFO
+    private void deductFromItems(Long productId, int requiredQty) {
         List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
         int totalAvailable = availableItems.stream().mapToInt(Item::getCurrentQuantity).sum();
 
@@ -211,11 +245,12 @@ public class OrderServiceImpl implements OrderService {
         for (Item item : availableItems) {
             if (remainingToDeduct == 0) break;
 
-            if (item.getCurrentQuantity() >= remainingToDeduct) {
-                item.setCurrentQuantity(item.getCurrentQuantity() - remainingToDeduct);
+            int current = item.getCurrentQuantity() == null ? 0 : item.getCurrentQuantity();
+            if (current >= remainingToDeduct) {
+                item.setCurrentQuantity(current - remainingToDeduct);
                 remainingToDeduct = 0;
             } else {
-                remainingToDeduct -= item.getCurrentQuantity();
+                remainingToDeduct -= current;
                 item.setCurrentQuantity(0);
             }
             itemRepository.save(item);
@@ -223,12 +258,33 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private void restoreInventory(Long productId, int quantityToRestore) {
-        // Tìm lô hàng bất kỳ (còn hạn) để cộng trả lại số lượng
-        List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
-        if (!availableItems.isEmpty()) {
-            Item item = availableItems.get(0);
-            item.setCurrentQuantity(item.getCurrentQuantity() + quantityToRestore);
-            itemRepository.save(item);
+        // Nếu sản phẩm là gói quà, hoàn lại từng thành phần tương ứng
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm ID " + productId));
+
+        if (Boolean.TRUE.equals(product.getIsGift())) {
+            List<ProductItem> components = productItemRepository.findByCustomGiftId(productId);
+            for (ProductItem comp : components) {
+                Long compProductId = comp.getProduct().getId();
+                int restoreQty = comp.getQuantity() * quantityToRestore;
+
+                List<Item> availableItems = itemRepository.findAvailableItems(compProductId, LocalDate.now());
+                if (!availableItems.isEmpty()) {
+                    Item item = availableItems.get(0);
+                    int current = item.getCurrentQuantity() == null ? 0 : item.getCurrentQuantity();
+                    item.setCurrentQuantity(current + restoreQty);
+                    itemRepository.save(item);
+                }
+            }
+        } else {
+            // Tìm lô hàng bất kỳ (còn hạn) để cộng trả lại số lượng
+            List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
+            if (!availableItems.isEmpty()) {
+                Item item = availableItems.get(0);
+                int current = item.getCurrentQuantity() == null ? 0 : item.getCurrentQuantity();
+                item.setCurrentQuantity(current + quantityToRestore);
+                itemRepository.save(item);
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-﻿package com.sba301.giftshop.service;
+package com.sba301.giftshop.service;
 
 import com.sba301.giftshop.model.dto.request.ProvideQuoteRequest;
 import com.sba301.giftshop.model.dto.request.QuoteRequest;

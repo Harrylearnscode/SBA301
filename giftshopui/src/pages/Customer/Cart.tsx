@@ -4,6 +4,7 @@ import { Trash2, ArrowLeft, X } from 'lucide-react';
 import CartService from '../../api/service/cart.service';
 import Toast from '../../components/ui/Toast';
 import QuoteService from '../../api/service/quote.service';
+import OrderService from '../../api/service/order.service';
 
 interface CartItem {
   id: number;
@@ -26,6 +27,7 @@ export default function Cart() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
   const [itemToDelete, setItemToDelete] = useState<{ id: number, name: string } | null>(null);
   const [isRequestingQuote, setIsRequestingQuote] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const fetchCart = async () => {
     try {
@@ -96,6 +98,55 @@ export default function Cart() {
 
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + (item.product.basePrice * item.quantity), 0);
+  };
+
+  // Xử lý thanh toán (Checkout)
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) return;
+    
+    try {
+      setIsCheckingOut(true);
+      
+      // Map dữ liệu từ cartItems sang định dạng CheckoutRequest
+      const payload = {
+        items: cartItems.map(item => ({
+          cartItemId: item.id,
+          productId: item.product.id,
+          quantity: item.quantity,
+          unitPrice: item.product.basePrice
+        })),
+        totalAmount: calculateTotal(),
+        shippingFee: 0, // Miễn phí vận chuyển
+        discountAmount: 0
+      };
+
+      const res = await OrderService.checkout(payload);
+      
+      if (res.success) {
+        setToast({ show: true, message: "Đặt hàng thành công!", type: "success" });
+        
+        // Xóa giỏ hàng sau khi đặt hàng thành công
+        await CartService.clearCart();
+        setCartItems([]);
+        
+        // Chuyển hướng đến trang thanh toán hoặc lịch sử đơn hàng
+        setTimeout(() => {
+          if (res.data?.payUrl) {
+            // Nếu có payUrl, chuyển tới URL thanh toán
+            window.location.href = res.data.payUrl;
+          } else {
+            // Nếu không, chuyển tới lịch sử đơn hàng
+            navigate('/order-history');
+          }
+        }, 1500);
+      } else {
+        setToast({ show: true, message: res.message || "Đặt hàng thất bại", type: "error" });
+      }
+    } catch (err: any) {
+      setToast({ show: true, message: "Lỗi kết nối máy chủ", type: "error" });
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   //Xử lý gửi yêu cầu báo giá
@@ -265,10 +316,11 @@ export default function Cart() {
                 <p className="text-right text-[10px] text-gray-400 mb-8 italic">(Đã bao gồm VAT)</p>
 
                 <button 
-                  onClick={() => alert("Chuyển sang trang Checkout (Đang phát triển)")}
-                  className="w-full bg-[#8b0000] text-white py-4 rounded font-bold uppercase tracking-wider hover:bg-red-900 transition flex justify-center items-center gap-2 shadow-lg shadow-red-900/20"
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut || cartItems.length === 0}
+                  className="w-full bg-[#8b0000] text-white py-4 rounded font-bold uppercase tracking-wider hover:bg-red-900 transition flex justify-center items-center gap-2 shadow-lg shadow-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  THANH TOÁN NGAY
+                  {isCheckingOut ? "ĐANG XỬ LÝ..." : "THANH TOÁN NGAY"}
                 </button>
 
                 <div className="relative flex items-center py-5">
