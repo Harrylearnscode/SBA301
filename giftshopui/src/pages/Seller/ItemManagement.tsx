@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, X, Package, Calendar, Hash, Layers, ChevronDown } from 'lucide-react';
+import { Plus, Edit, X, Package, Calendar, Hash, Layers, ChevronDown, Download } from 'lucide-react';
 import ItemService from '../../api/service/item.service';
 import ProductService from '../../api/service/product.service';
 
@@ -9,6 +9,7 @@ export default function ItemManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [formData, setFormData] = useState({
     productId: '',
@@ -88,6 +89,37 @@ export default function ItemManager() {
     setIsModalOpen(true);
   };
 
+  const getFileNameFromDisposition = (contentDisposition?: string) => {
+    if (!contentDisposition) return 'items.xlsx';
+    const match = contentDisposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
+    const rawName = match?.[1] || match?.[2];
+    return rawName ? decodeURIComponent(rawName) : 'items.xlsx';
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const response = await ItemService.exportItemsToExcel();
+      const fileName = getFileNameFromDisposition(response.headers?.['content-disposition']);
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error: any) {
+      alert(error?.message || 'Không thể xuất file Excel');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -134,12 +166,22 @@ export default function ItemManager() {
           <h2 className="text-2xl font-bold text-gray-800">Quản lý Kho Vật Phẩm</h2>
           <p className="text-sm text-gray-500">Quản lý lô hàng và hạn dùng.</p>
         </div>
-        <button 
-          onClick={() => openModal()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md font-bold"
-        >
-          <Plus size={18} /> Nhập kho mới
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportExcel}
+            disabled={isExporting}
+            className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md font-bold"
+          >
+            <Download size={18} />
+            {isExporting ? 'Đang xuất...' : 'Xuất Excel'}
+          </button>
+          <button 
+            onClick={() => openModal()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md font-bold"
+          >
+            <Plus size={18} /> Nhập kho mới
+          </button>
+        </div>
       </div>
 
       {/* Table - Danh sách sản phẩm */}
