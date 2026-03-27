@@ -5,6 +5,10 @@ import com.sba301.giftshop.model.dto.request.UpdateItemRequest;
 import com.sba301.giftshop.model.dto.response.ItemDetailResponse;
 import com.sba301.giftshop.model.dto.response.ItemResponse;
 
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+
 import java.util.List;
 
 public interface ItemService {
@@ -13,4 +17,5 @@ public interface ItemService {
     List<ItemResponse> getItemsByProductId(Long productId);
     Integer getTotalAvailableQuantity(Long productId);
     List<ItemDetailResponse> getAllItems();
+    void exportItemsToExcel(HttpServletResponse response) throws IOException;
 }

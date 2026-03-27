@@ -9,10 +9,19 @@ import com.sba301.giftshop.model.entity.Product;
 import com.sba301.giftshop.repository.ItemRepository;
 import com.sba301.giftshop.repository.ProductRepository;
 import com.sba301.giftshop.util.mapper.ItemMapper;
+
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -71,5 +80,40 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<ItemDetailResponse> getAllItems() {
         return itemMapper.toDetailResponseList(itemRepository.findAll());
+    }
+
+    @Override
+    public void exportItemsToExcel(HttpServletResponse response) throws IOException {
+        List<Item> items = itemRepository.findAll();
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ServletOutputStream outputStream = response.getOutputStream()) {
+            final Sheet sheet = workbook.createSheet("Items");
+
+            final Row headerRow = sheet.createRow(0);
+            headerRow.createCell(0).setCellValue("ID");
+            headerRow.createCell(1).setCellValue("Product Name");
+            headerRow.createCell(2).setCellValue("Batch Code");
+            headerRow.createCell(3).setCellValue("Expired Date");
+            headerRow.createCell(4).setCellValue("Initial Quantity");
+            headerRow.createCell(5).setCellValue("Current Quantity");
+
+            int rowNum = 1;
+            for (Item item : items) {
+                final Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(item.getId());
+                row.createCell(1).setCellValue(item.getProduct().getName());
+                row.createCell(2).setCellValue(item.getBatchCode());
+                row.createCell(3).setCellValue(item.getExpiredDate() != null ? item.getExpiredDate().toString() : "");
+                row.createCell(4).setCellValue(item.getInitialQuantity());
+                row.createCell(5).setCellValue(item.getCurrentQuantity());
+            }
+
+            for (int i = 0; i <= 5; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(outputStream);
+        }
     }
 }
