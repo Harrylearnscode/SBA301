@@ -44,6 +44,7 @@
 
     ITEM: {
         GET_ALL: '/items',
+        EXPORT_EXCEL: '/items/export-excel',
         CREATE_BATCH: '/items',
         UPDATE_BATCH: (id: string | number) => `/items/${id}`,
         GET_BY_PRODUCT: (productId: string | number) => `/items/product/${productId}`,
