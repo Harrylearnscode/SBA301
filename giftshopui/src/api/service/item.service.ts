@@ -64,6 +64,16 @@ const ItemService = {
             throw handleApiError(error);
         }
     },
+
+    exportItemsToExcel: async () => {
+        try {
+            return await axiosInstance.get(API_ENDPOINTS.ITEM.EXPORT_EXCEL, {
+                responseType: 'blob',
+            });
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
 };
 
 export default ItemService;
