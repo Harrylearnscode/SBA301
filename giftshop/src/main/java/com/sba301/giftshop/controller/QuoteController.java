@@ -9,11 +9,10 @@ import com.sba301.giftshop.service.QuoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.nio.file.attribute.UserPrincipal;
+
 
 @RestController
 @RequestMapping("/api/quotes")
@@ -63,8 +62,7 @@ public class QuoteController {
     public ResponseEntity<ResponseObject> replyToQuote(
             @PathVariable Long quoteId,
             @RequestParam boolean isAccepted,
-            @RequestParam(required = false) String shippingAddress,
-            @AuthenticationPrincipal UserPrincipal user
+            @RequestParam(required = false) String shippingAddress
     ) {
         return ResponseEntity.ok(ResponseObject.builder()
                 .code("200")

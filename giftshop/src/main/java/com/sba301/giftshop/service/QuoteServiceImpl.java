@@ -124,6 +124,10 @@ public class QuoteServiceImpl implements QuoteService {
 
             // Tạo OrderDetail từ QuoteProduct và trừ tồn kho
             for (QuoteProduct quoteProduct : quote.getQuoteProducts()) {
+                if (quoteProduct.getQuotedPrice() == null) {
+                    throw new RuntimeException("Sản phẩm '" + quoteProduct.getProduct().getName() + "' chưa được báo giá");
+                }
+
                 OrderDetail orderDetail = OrderDetail.builder()
                         .order(order)
                         .product(quoteProduct.getProduct())
@@ -237,6 +241,14 @@ public class QuoteServiceImpl implements QuoteService {
         quote.setTotalPrice(totalPrice);
         quote.setValidUntil(request.getValidUntil());
         quote.setStatus(QuoteStatus.QUOTED); // Chuyển trạng thái để khách hàng thấy được giá
+
+        // Lưu thông tin logo và ghi chú tùy chỉnh (B2B Custom Gift)
+        if (request.getLogoUrl() != null) {
+            quote.setLogoUrl(request.getLogoUrl());
+        }
+        if (request.getCustomNote() != null) {
+            quote.setCustomNote(request.getCustomNote());
+        }
 
         return quoteMapper.toResponse(quoteRepository.save(quote));
     }

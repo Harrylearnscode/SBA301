@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Check, X, Gift, Truck, Minus, Loader2, Package, ArrowRight, ArrowLeft, Trash2 } from "lucide-react";import ProductService from "../../api/service/product.service";
 import CartService from "../../api/service/cart.service";
 import { useNavigate } from "react-router-dom";
@@ -48,12 +48,18 @@ export default function CustomProductPage() {
                 const baseProducts = productsData.filter((p: Product) => p.isGift === false);
 
                 // TÁCH VỎ HỘP VÀ MÓN LẺ DỰA VÀO TÊN CATEGORY
-                // (Bạn có thể đổi 'hộp' thành tên danh mục hoặc ID thực tế của bạn)
+                // Hỗ trợ cả tiếng Anh (box) và tiếng Việt (hộp)
                 const boxList = baseProducts.filter((p: Product) => 
-                    p.category && p.category.name.toLowerCase().includes('box')
+                    p.category && (
+                        p.category.name.toLowerCase().includes('box') || 
+                        p.category.name.toLowerCase().includes('hộp')
+                    )
                 );
                 const itemList = baseProducts.filter((p: Product) => 
-                    !p.category || !p.category.name.toLowerCase().includes('box')
+                    !p.category || !(
+                        p.category.name.toLowerCase().includes('box') || 
+                        p.category.name.toLowerCase().includes('hộp')
+                    )
                 );
 
                 setBoxes(boxList);

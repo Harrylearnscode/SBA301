@@ -1,7 +1,7 @@
-@import "tailwindcss";
-
 /* 1. Nhúng font Lora từ Google Font */
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+@import "tailwindcss";
 
 /* 2. Ép các class font-serif của Tailwind sử dụng font Lora này */
 .font-serif {

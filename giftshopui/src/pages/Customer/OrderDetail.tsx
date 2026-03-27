@@ -5,6 +5,7 @@ import OrderService from '../../api/service/order.service';
 import UserService from '../../api/service/user.service';
 import ProductService from '../../api/service/product.service';
 import Toast from '../../components/ui/Toast';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 // Bộ từ điển trạng thái
 const ORDER_STATUS: Record<string, { label: string, color: string }> = {
@@ -29,6 +30,7 @@ export default function OrderDetail() {
     const [userPhone, setUserPhone] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const fetchOrderDetail = async () => {
         try {
@@ -57,7 +59,7 @@ export default function OrderDetail() {
     }, [id]);
 
     const handleCancelOrder = async () => {
-        if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
+        setShowConfirm(false); // Đóng modal trước khi xử lý
         try {
             const res = await OrderService.cancelOrder(id!); //
             if (res.success) {
@@ -173,12 +175,12 @@ export default function OrderDetail() {
                     {/* Tổng kết tiền & Nút Hủy */}
                     <div className="bg-gray-50 p-6 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-gray-200">
                         {order.status === 'PENDING' ? (
-                            <button 
-                                onClick={handleCancelOrder}
-                                className="w-full md:w-auto px-6 py-3 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2"
-                            >
-                                <XCircle size={18} /> Hủy đơn hàng này
-                            </button>
+                                <button 
+                                    onClick={() => setShowConfirm(true)}
+                                    className="w-full md:w-auto px-6 py-3 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2"
+                                >
+                                    <XCircle size={18} /> Hủy đơn hàng này
+                                </button>
                         ) : (
                             <div className="text-sm text-gray-500 italic">
                                 {/* Chỗ trống giữ layout nếu không có nút hủy */}
@@ -207,6 +209,16 @@ export default function OrderDetail() {
             </div>
             
             <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+            
+            <ConfirmModal 
+                show={showConfirm}
+                title="Xác nhận hủy đơn hàng"
+                message="Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác."
+                confirmText="Đồng ý hủy"
+                cancelText="Quay lại"
+                onConfirm={handleCancelOrder}
+                onCancel={() => setShowConfirm(false)}
+            />
         </div>
     );
 }

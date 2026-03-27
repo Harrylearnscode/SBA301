@@ -16,6 +16,8 @@ import java.util.List;
 public class ProvideQuoteRequest {
     private LocalDateTime validUntil; // Hạn chót của báo giá này
     private List<QuoteItemPriceRequest> itemPrices;
+    private String logoUrl;      // URL logo doanh nghiệp (cho Custom Gift B2B)
+    private String customNote;   // Ghi chú tùy chỉnh từ Sale
 
     @Data
     @NoArgsConstructor

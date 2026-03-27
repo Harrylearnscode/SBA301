@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, Edit, Trash2, Eye, X, User, 
-  Mail, Phone, Calendar, Shield, Building2, Briefcase, 
+  Building2, 
   DollarSign, CheckCircle, AlertCircle, Lock, Landmark 
 } from 'lucide-react';
 import UserService from '../../api/service/user.service';
+import Toast from '../../components/ui/Toast';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 export default function UserManager() {
   const [users, setUsers] = useState<any[]>([]);
@@ -13,6 +15,8 @@ export default function UserManager() {
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<number | null>(null);
   const [userDetail, setUserDetail] = useState<any | null>(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
+  const [userToDelete, setUserToDelete] = useState<number | null>(null);
 
   // Form State
   const initialForm = {
@@ -48,10 +52,12 @@ export default function UserManager() {
         setUserDetail(res.data);
         setExpandedUserId(id);
       }
-    } catch (error) { alert("Không thể lấy thông tin chi tiết"); }
+    } catch (error) { 
+      setToast({ show: true, message: "Không thể lấy thông tin chi tiết", type: 'error' });
+    }
   };
 
-  const openModal = async (user = null) => {
+  const openModal = async (user: any = null) => {
   if (user) {
     const res = await UserService.getUserById(user.id);
     if (res.success) {
@@ -97,18 +103,31 @@ export default function UserManager() {
       }
       
       if (res.success) {
+        setToast({ show: true, message: `${editingUser ? 'Cập nhật' : 'Tạo'} người dùng thành công!`, type: 'success' });
         setIsModalOpen(false);
         fetchUsers();
-      } else { alert(res.message); }
-    } catch (error) { alert("Thao tác thất bại"); }
+      } else { 
+        setToast({ show: true, message: res.message || "Thao tác thất bại", type: 'error' });
+      }
+    } catch (error) { 
+      setToast({ show: true, message: "Lỗi kết nối máy chủ", type: 'error' });
+    }
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Bạn có chắc muốn xóa người dùng này?")) {
-      try {
-        const res = await UserService.deleteUser(id);
-        if (res.success) fetchUsers();
-      } catch (error) { alert("Lỗi khi xóa"); }
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      const res = await UserService.deleteUser(userToDelete);
+      if (res.success) {
+        setToast({ show: true, message: "Đã xóa người dùng thành công", type: 'success' });
+        fetchUsers();
+      } else {
+        setToast({ show: true, message: res.message || "Không thể xóa người dùng", type: 'error' });
+      }
+    } catch (error) { 
+      setToast({ show: true, message: "Lỗi khi xóa", type: 'error' });
+    } finally {
+      setUserToDelete(null);
     }
   };
 
@@ -173,7 +192,7 @@ export default function UserManager() {
                     <div className="flex justify-end gap-1">
                       <button onClick={() => handleViewDetail(user.id)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Xem chi tiết"><Eye size={18} /></button>
                       <button onClick={() => openModal(user)} className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg" title="Sửa"><Edit size={18} /></button>
-                      <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Xóa"><Trash2 size={18} /></button>
+                      <button onClick={() => setUserToDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Xóa"><Trash2 size={18} /></button>
                     </div>
                   </td>
                 </tr>
@@ -336,6 +355,18 @@ export default function UserManager() {
           </div>
         </div>
       )}
+
+      <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+      
+      <ConfirmModal 
+        show={!!userToDelete}
+        title="Xác nhận xóa tài khoản"
+        message="Bạn có chắc chắn muốn xóa người dùng này không? Hành động này không thể hoàn tác."
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy"
+        onConfirm={handleDelete}
+        onCancel={() => setUserToDelete(null)}
+      />
     </div>
   );
 }

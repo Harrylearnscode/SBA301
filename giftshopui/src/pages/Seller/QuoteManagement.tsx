@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, User, Phone, Send, CheckCircle, UserPlus, Calendar, DollarSign, Package, Image as ImageIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, User, Phone, Send, UserPlus, Calendar, Package, Image as ImageIcon } from 'lucide-react';
 import QuoteService from '../../api/service/quote.service';
 
 export default function QuoteManager() {
@@ -62,6 +62,27 @@ export default function QuoteManager() {
     }));
   };
 
+  // 4. Xử lý thay đổi logo và ghi chú
+  const handleLogoChange = (quoteId: number, value: string) => {
+    setPricingInputs((prev: any) => ({
+      ...prev,
+      [quoteId]: {
+        ...prev[quoteId],
+        logoUrl: value
+      }
+    }));
+  };
+
+  const handleNoteChange = (quoteId: number, value: string) => {
+    setPricingInputs((prev: any) => ({
+      ...prev,
+      [quoteId]: {
+        ...prev[quoteId],
+        customNote: value
+      }
+    }));
+  };
+
   // 4. Gửi báo giá cuối cùng
   const handleSubmitPricing = async (quoteId: number) => {
     const inputData = pricingInputs[quoteId];
@@ -84,7 +105,9 @@ export default function QuoteManager() {
     try {
       const payload = {
         validUntil: new Date(inputData.validUntil).toISOString(),
-        itemPrices: itemPrices
+        itemPrices: itemPrices,
+        logoUrl: inputData.logoUrl || null,
+        customNote: inputData.customNote || null
       };
 
       const res = await QuoteService.providePricing(quoteId, payload);
@@ -268,6 +291,29 @@ export default function QuoteManager() {
                       </div>
                     </div>
 
+                    {/* THÊM: LOGO VÀ GHI CHÚ B2B */}
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Logo Doanh nghiệp (URL - B2B):</label>
+                      <div className="relative">
+                        <ImageIcon size={16} className="absolute left-3 top-2.5 text-gray-400" />
+                        <input 
+                          type="text" 
+                          placeholder="https://example.com/logo.png"
+                          className="w-full border rounded-lg p-2.5 pl-10 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                          onChange={(e) => handleLogoChange(quote.id, e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Ghi chú tùy chỉnh (Custom Note):</label>
+                        <textarea 
+                          placeholder="VD: In logo lên mặt gỗ của hộp quà..."
+                          className="w-full border rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px]"
+                          onChange={(e) => handleNoteChange(quote.id, e.target.value)}
+                        />
+                    </div>
+
                     <div className="pt-4 border-t border-gray-200">
                       <button 
                         // THAY ĐỔI ONCLICK TẠI ĐÂY: Mở Modal thay vì gọi thẳng hàm
@@ -336,12 +382,22 @@ function StatusBadge({ status }: { status: string }) {
   const styles: any = {
     PENDING: "bg-amber-100 text-amber-700",
     PROCESSING: "bg-blue-100 text-blue-700",
-    COMPLETED: "bg-green-100 text-green-700",
-    REJECTED: "bg-red-100 text-red-700"
+    QUOTED: "bg-indigo-100 text-indigo-700",
+    ACCEPTED: "bg-green-100 text-green-700",
+    REJECTED: "bg-red-100 text-red-700",
+    CANCELLED: "bg-gray-100 text-gray-500"
+  };
+  const labels: any = {
+    PENDING: "Chờ xử lý",
+    PROCESSING: "Đang tư vấn",
+    QUOTED: "Đã báo giá",
+    ACCEPTED: "Đã đồng ý",
+    REJECTED: "Đã từ chối",
+    CANCELLED: "Đã hủy"
   };
   return (
     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${styles[status] || 'bg-gray-100 text-gray-700'}`}>
-      {status}
+      {labels[status] || status}
     </span>
   );
 }

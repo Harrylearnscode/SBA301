@@ -56,6 +56,9 @@ public class Order {
     @Column(name = "paid_time")
     private LocalDateTime paidTime;
 
+    @Column(name = "deposit_amount")
+    private BigDecimal depositAmount;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderDetail> orderDetails;
 }

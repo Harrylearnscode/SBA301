@@ -40,8 +40,12 @@ export default function QuoteDetail() {
 
     const confirmReply = async () => {
         if (replyAction === null) return;
+        if (replyAction && !shippingAddress) {
+            alert('Vui lòng nhập địa chỉ giao hàng trước khi chốt giá!');
+            return;
+        }
         try {
-            const res = await QuoteService.replyToQuote(id!, replyAction);
+            const res = await QuoteService.replyToQuote(id!, replyAction, shippingAddress);
             if (res.success) {
                 setToast({ show: true, message: replyAction ? 'Đã chốt giá thành công!' : 'Đã từ chối báo giá', type: 'success' });
                 fetchQuoteDetail(); // Refresh lại data
@@ -94,6 +98,27 @@ export default function QuoteDetail() {
                         </div>
                     </div>
 
+                    {/* HIỂN THỊ LOGO DOANH NGHIỆP (B2B) */}
+                    {quote.logoUrl && (
+                        <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                           <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Doanh nghiệp của bạn</span>
+                                <div className="h-0.5 w-10 bg-gray-200"></div>
+                           </div>
+                           <div className="h-16 w-32 border bg-white rounded-lg overflow-hidden p-1 shadow-sm">
+                                <img src={quote.logoUrl} alt="Business Logo" className="w-full h-full object-contain" />
+                           </div>
+                        </div>
+                    )}
+
+                    {/* HIỂN THỊ GHI CHÚ TÙY CHỈNH (B2B) */}
+                    {quote.customNote && (
+                        <div className="px-6 py-4 bg-amber-50/30 border-b border-gray-100 italic text-sm text-gray-600">
+                           <span className="font-bold text-amber-600 non-italic mr-2">Ghi chú từ Sale:</span>
+                           "{quote.customNote}"
+                        </div>
+                    )}
+
                     {/* Danh sách sản phẩm */}
                     <div className="p-6">
                         <h3 className="font-bold text-gray-800 mb-4 uppercase tracking-wider text-sm">Danh sách sản phẩm yêu cầu</h3>
@@ -103,6 +128,15 @@ export default function QuoteDetail() {
                                     <img src={item.product?.imageUrl || 'https://placehold.co/100'} alt="product" className="w-16 h-16 object-cover rounded border border-gray-200" />
                                     <div className="flex-1">
                                         <p className="font-bold text-gray-800">{item.product?.name}</p>
+                                        {item.product?.isGift && item.product?.giftComponents && item.product.giftComponents.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {item.product.giftComponents.map((comp: any) => (
+                                                    <span key={comp.id} className="text-[9px] bg-white text-gray-500 px-1.5 py-0.5 rounded border border-gray-100">
+                                                        {comp.product?.name} (x{comp.quantity})
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                         <p className="text-xs text-gray-500">Giá tham khảo: {formatPrice(item.product?.basePrice)}</p>
                                     </div>
                                     <div className="text-center px-4">

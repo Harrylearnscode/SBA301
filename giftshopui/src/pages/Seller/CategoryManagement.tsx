@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, X, Edit } from 'lucide-react'; // Thêm icon Edit
 import CategoryService from '../../api/service/category.service';
+import Toast from '../../components/ui/Toast';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -12,6 +14,9 @@ export default function CategoryManager() {
     parentId: ''
   });
 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+
   const fetchCategories = async () => {
     try {
       const res = await CategoryService.getAllCategories();
@@ -19,7 +24,7 @@ export default function CategoryManager() {
         setCategories(res.data);
       }
     } catch (error) {
-      console.error("Lỗi tải danh mục:", error);
+      setToast({ show: true, message: "Lỗi tải danh mục", type: 'error' });
     }
   };
 
@@ -60,26 +65,32 @@ export default function CategoryManager() {
       }
 
       if (!res.success) {
-        alert(res.message || "Thao tác thất bại!");
+        setToast({ show: true, message: res.message || "Thao tác thất bại!", type: 'error' });
         return;
       }
       
+      setToast({ show: true, message: `${editingId ? 'Cập nhật' : 'Thêm'} danh mục thành công!`, type: 'success' });
       setIsModalOpen(false);
       fetchCategories(); 
     } catch (error: any) {
-      console.error("Category submit error:", error);
-      alert(error.message || "Thao tác thất bại!");
+      setToast({ show: true, message: error.message || "Thao tác thất bại!", type: 'error' });
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-      try {
-        await CategoryService.deleteCategory(id);
+  const handleDelete = async () => {
+    if (!categoryToDelete) return;
+    try {
+      const res = await CategoryService.deleteCategory(categoryToDelete);
+      if (res.success) {
+        setToast({ show: true, message: "Đã xóa danh mục thành công", type: 'success' });
         fetchCategories();
-      } catch (error) {
-        alert("Không thể xóa danh mục này!");
+      } else {
+        setToast({ show: true, message: res.message || "Không thể xóa danh mục", type: 'error' });
       }
+    } catch (error) {
+      setToast({ show: true, message: "Không thể xóa danh mục này!", type: 'error' });
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -125,7 +136,7 @@ export default function CategoryManager() {
                     <Edit size={16}/>
                   </button>
                   <button 
-                    onClick={() => handleDelete(cat.id)} 
+                    onClick={() => setCategoryToDelete(cat.id)} 
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Xóa"
                   >
@@ -196,6 +207,17 @@ export default function CategoryManager() {
           </div>
         </div>
       )}
+      <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+      
+      <ConfirmModal 
+        show={!!categoryToDelete}
+        title="Xác nhận xóa danh mục"
+        message="Bạn có chắc chắn muốn xóa danh mục này không? Các sản phẩm thuộc danh mục này sẽ bị mồ côi."
+        confirmText="Đồng ý xóa"
+        cancelText="Hủy bỏ"
+        onConfirm={handleDelete}
+        onCancel={() => setCategoryToDelete(null)}
+      />
     </div>
   );
 }
