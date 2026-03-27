@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, User, Phone, Send, CheckCircle, UserPlus, Calendar, DollarSign } from 'lucide-react';
+import { Clock, User, Phone, Send, CheckCircle, UserPlus, Calendar, DollarSign, Package, Image as ImageIcon } from 'lucide-react';
 import QuoteService from '../../api/service/quote.service';
 
 export default function QuoteManager() {
   const [quotes, setQuotes] = useState<any[]>([]);
   // Lưu trữ dữ liệu nhập liệu cho từng quote: { [quoteId]: { validUntil, prices: { [quoteProductId]: price } } }
   const [pricingInputs, setPricingInputs] = useState<any>({});
+
+  const [quoteToSubmit, setQuoteToSubmit] = useState<number | null>(null);
 
   const fetchQuotes = async () => {
     try {
@@ -179,25 +181,72 @@ export default function QuoteManager() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {quote.quoteProducts?.map((qp: any) => (
-                          <tr key={qp.id} className="hover:bg-gray-50/50">
-                            <td className="p-3 font-medium text-gray-800">{qp.product?.name}</td>
-                            <td className="p-3 text-center text-gray-500">{qp.product?.basePrice?.toLocaleString()}đ</td>
-                            <td className="p-3 text-center font-bold">x{qp.quantity}</td>
-                            <td className="p-3">
-                              <div className="flex justify-end">
-                                <input 
-                                  type="number" 
-                                  placeholder="Nhập giá..."
-                                  disabled={quote.status !== 'PENDING' && quote.status !== 'PROCESSING'}
-                                  className="w-32 border border-gray-200 rounded-lg p-2 text-right text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-indigo-600"
-                                  onChange={(e) => handlePriceChange(quote.id, qp.id, e.target.value)}
-                                  defaultValue={qp.quotedPrice}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {quote.quoteProducts?.map((qp: any) => {
+                          const isGift = qp.product?.isGift === true;
+                          
+                          return (
+                            <tr key={qp.id} className="hover:bg-gray-50/50">
+                              <td className="p-3">
+                                <div className="flex gap-3">
+                                  {/* Ảnh sản phẩm (Thu nhỏ) */}
+                                  <div className="w-12 h-12 shrink-0 rounded bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                                    {qp.product?.imageUrl ? (
+                                      <img src={qp.product.imageUrl} alt={qp.product.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <ImageIcon size={16} className="text-gray-400" />
+                                    )}
+                                  </div>
+
+                                  {/* Thông tin sản phẩm & Các món thành phần */}
+                                  <div className="flex-1">
+                                    <p className="font-bold text-gray-800 text-sm">{qp.product?.name}</p>
+                                    {qp.product?.sku && <p className="text-[10px] text-gray-500">SKU: {qp.product.sku}</p>}
+                                    
+                                    {/* Khối hiển thị chi tiết các món trong Giỏ Quà */}
+                                    {isGift && qp.product?.giftComponents && qp.product.giftComponents.length > 0 && (
+                                      <div className="mt-2 bg-rose-50/50 rounded-lg p-2 border border-rose-100 w-full max-w-sm">
+                                        <p className="text-[10px] font-bold text-rose-600 uppercase mb-1 flex items-center gap-1">
+                                          <Package size={12} /> Thành phần hộp quà:
+                                        </p>
+                                        <div className="space-y-1">
+                                          {qp.product.giftComponents.map((gc: any, idx: number) => (
+                                            <div key={idx} className="flex justify-between items-center text-[11px] border-b border-rose-100/50 last:border-0 pb-1 last:pb-0">
+                                              <span className="text-gray-700 font-medium line-clamp-1 pr-2">
+                                                - {gc.product?.name}
+                                              </span>
+                                              <span className="text-gray-500 font-bold shrink-0">
+                                                x{gc.quantity}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              {/* Căn chỉnh các cột còn lại lên top để đồng bộ với cột Tên sản phẩm */}
+                              <td className="p-3 text-center text-gray-500 align-top pt-4">
+                                {qp.product?.basePrice?.toLocaleString()}đ
+                              </td>
+                              <td className="p-3 text-center font-bold align-top pt-4">
+                                x{qp.quantity}
+                              </td>
+                              <td className="p-3 align-top pt-2">
+                                <div className="flex justify-end">
+                                  <input 
+                                    type="number" 
+                                    placeholder="Nhập giá..."
+                                    disabled={quote.status !== 'PENDING' && quote.status !== 'PROCESSING'}
+                                    className="w-32 border border-gray-200 rounded-lg p-2 text-right text-sm focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-indigo-600 bg-white"
+                                    onChange={(e) => handlePriceChange(quote.id, qp.id, e.target.value)}
+                                    defaultValue={qp.quotedPrice}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -221,7 +270,8 @@ export default function QuoteManager() {
 
                     <div className="pt-4 border-t border-gray-200">
                       <button 
-                        onClick={() => handleSubmitPricing(quote.id)}
+                        // THAY ĐỔI ONCLICK TẠI ĐÂY: Mở Modal thay vì gọi thẳng hàm
+                        onClick={() => setQuoteToSubmit(quote.id)}
                         disabled={!quote.salesStaff || (quote.status !== 'PENDING' && quote.status !== 'PROCESSING')}
                         className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all shadow-lg ${
                           quote.salesStaff 
@@ -245,6 +295,39 @@ export default function QuoteManager() {
           </div>
         ))}
       </div>
+      {/* MODAL CONFIRM: GỬI BÁO GIÁ CHO KHÁCH */}
+      {quoteToSubmit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Gửi báo giá?</h3>
+              <p className="text-gray-500 text-sm mb-6">
+                Bạn có chắc chắn muốn chốt mức giá này và gửi cho khách hàng? Khách hàng sẽ nhận được thông báo ngay lập tức.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setQuoteToSubmit(null)} 
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
+                >
+                  Kiểm tra lại
+                </button>
+                <button 
+                  onClick={() => {
+                    handleSubmitPricing(quoteToSubmit);
+                    setQuoteToSubmit(null);
+                  }} 
+                  className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
+                >
+                  Xác nhận Gửi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

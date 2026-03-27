@@ -2,6 +2,8 @@ package com.sba301.giftshop.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -19,12 +21,15 @@ public class CorporateProfile {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Nationalized
     @Column(name = "company_name")
     private String companyName;
 
+    @Nationalized
     @Column(name = "tax_id")
     private String taxId;
 
+    @Nationalized
     @Column(name = "address_reg")
     private String addressReg;
 

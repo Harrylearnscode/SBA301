@@ -4,6 +4,7 @@ import com.sba301.giftshop.model.enums.OrderStatus;
 import com.sba301.giftshop.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,7 +28,7 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    // Giả sử shipping_address trong diagram lưu text, nếu lưu ID thì cần quan hệ
+    @Nationalized
     @Column(name = "shipping_address")
     private String shippingAddress;
 

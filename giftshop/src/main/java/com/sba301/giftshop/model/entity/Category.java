@@ -2,6 +2,8 @@ package com.sba301.giftshop.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
+
 import java.util.List;
 
 @Entity
@@ -15,6 +17,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Nationalized
     private String name;
 
     // Self-referencing (Danh mục cha - con)

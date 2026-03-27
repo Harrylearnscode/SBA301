@@ -20,7 +20,8 @@ export default function QuoteDetail() {
     const [shippingAddress, setShippingAddress] = useState('');
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
-
+    const [replyAction, setReplyAction] = useState<boolean | null>(null);
+   
     const fetchQuoteDetail = async () => {
         try {
             setLoading(true);
@@ -37,32 +38,18 @@ export default function QuoteDetail() {
         fetchQuoteDetail();
     }, [id]);
 
-    const handleReply = async (isAccepted: boolean) => {
-        if (isAccepted && !shippingAddress.trim()) {
-            setToast({ show: true, message: 'Vui lòng nhập địa chỉ giao hàng', type: 'error' });
-            return;
-        }
-
-        if (!window.confirm(`Bạn có chắc muốn ${isAccepted ? 'ĐỒNG Ý' : 'TỪ CHỐI'} mức giá này?`)) return;
+    const confirmReply = async () => {
+        if (replyAction === null) return;
         try {
-            const res = isAccepted
-                ? await QuoteService.acceptQuote(id!, { shippingAddress: shippingAddress.trim() })
-                : await QuoteService.rejectQuote(id!);
+            const res = await QuoteService.replyToQuote(id!, replyAction);
             if (res.success) {
-                setToast({ show: true, message: isAccepted ? 'Đã chốt giá thành công!' : 'Đã từ chối báo giá', type: 'success' });
-
-                if (isAccepted) {
-                    const payUrl = res.data?.orderResponse?.payUrl;
-                    if (payUrl) {
-                        window.location.href = payUrl;
-                        return;
-                    }
-                }
-
+                setToast({ show: true, message: replyAction ? 'Đã chốt giá thành công!' : 'Đã từ chối báo giá', type: 'success' });
                 fetchQuoteDetail(); // Refresh lại data
             }
         } catch (error) {
             setToast({ show: true, message: 'Có lỗi xảy ra', type: 'error' });
+        } finally {
+            setReplyAction(null); // Đóng modal
         }
     };
 
@@ -169,8 +156,11 @@ export default function QuoteDetail() {
                             
                             {quote.status === 'QUOTED' && (
                                 <>
-                                    <button onClick={() => handleReply(false)} className="flex-1 md:flex-none px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition flex justify-center items-center gap-2"><XCircle size={18} /> Từ chối</button>
-                                    <button onClick={() => handleReply(true)} className="flex-1 md:flex-none px-8 py-3 bg-[#b30000] text-white font-bold rounded-lg hover:bg-red-800 shadow-lg shadow-red-200 transition flex justify-center items-center gap-2"><CheckCircle size={18} /> Đồng ý mức giá này</button>
+                                    {/* Mở Modal Từ chối */}
+                                    <button onClick={() => setReplyAction(false)} className="flex-1 md:flex-none px-6 py-3 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition flex justify-center items-center gap-2"><XCircle size={18} /> Từ chối</button>
+                                    
+                                    {/* Mở Modal Đồng ý */}
+                                    <button onClick={() => setReplyAction(true)} className="flex-1 md:flex-none px-8 py-3 bg-[#b30000] text-white font-bold rounded-lg hover:bg-red-800 shadow-lg shadow-red-200 transition flex justify-center items-center gap-2"><CheckCircle size={18} /> Đồng ý mức giá này</button>
                                 </>
                             )}
                             
@@ -181,7 +171,42 @@ export default function QuoteDetail() {
                     </div>
                 </div>
             </div>
+            {/* MODAL CONFIRM: KHÁCH HÀNG ĐỒNG Ý / TỪ CHỐI */}
+            {replyAction !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 text-center">
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${replyAction ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                                {replyAction ? <CheckCircle size={32} /> : <XCircle size={32} />}
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                {replyAction ? 'Xác nhận chốt giá?' : 'Từ chối báo giá?'}
+                            </h3>
+                            <p className="text-gray-500 text-sm mb-6">
+                                {replyAction 
+                                    ? 'Bạn đồng ý với mức giá Sale đã đề xuất? Đơn hàng sẽ được tiến hành ngay sau khi xác nhận.' 
+                                    : 'Bạn không hài lòng với mức giá này và muốn từ chối yêu cầu?'}
+                            </p>
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setReplyAction(null)} 
+                                    className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
+                                >
+                                    Quay lại
+                                </button>
+                                <button 
+                                    onClick={confirmReply} 
+                                    className={`flex-1 py-3 text-white font-bold rounded-xl transition shadow-lg ${replyAction ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-gray-800 hover:bg-gray-900 shadow-gray-200'}`}
+                                >
+                                    {replyAction ? 'Đồng ý' : 'Từ chối'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+        
         </div>
     );
 }

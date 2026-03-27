@@ -3,6 +3,8 @@ package com.sba301.giftshop.model.entity;
 import com.sba301.giftshop.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -29,6 +31,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Nationalized
     @Column(name = "full_name")
     private String fullName;
 

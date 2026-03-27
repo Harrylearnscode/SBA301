@@ -2,6 +2,8 @@ package com.sba301.giftshop.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -20,12 +22,15 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @Nationalized
     private String name;
+
     private String sku;
 
     @Column(name = "base_price")
     private BigDecimal basePrice;
 
+    @Nationalized
     private String description;
 
     @Column(name = "image_url")
