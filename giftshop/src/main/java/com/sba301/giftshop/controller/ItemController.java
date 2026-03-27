@@ -4,7 +4,12 @@ import com.sba301.giftshop.model.dto.request.ItemRequest;
 import com.sba301.giftshop.model.dto.request.UpdateItemRequest;
 import com.sba301.giftshop.model.dto.response.ResponseObject;
 import com.sba301.giftshop.service.ItemService;
+
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+
+import java.io.IOException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,5 +59,12 @@ public class ItemController {
                 .code("200").message("Lấy số lượng tồn kho thành công").isSuccess(true).status(HttpStatus.OK)
                 .data(itemService.getTotalAvailableQuantity(productId))
                 .build());
+    }
+
+    @GetMapping("/export-excel")
+    public void exportItemsToExcel(final HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=items.xlsx");
+        itemService.exportItemsToExcel(response);
     }
 }
