@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect } from "react";
-import { Plus, Check, X, Gift, Truck, Minus, Loader2, Package, ArrowRight, ArrowLeft, Trash2 } from "lucide-react";import ProductService from "../../api/service/product.service";
+import React, { useState, useEffect } from "react";
+import { Plus, X, Gift, Minus, Loader2, ArrowRight, ArrowLeft, Upload, Image as ImageIcon } from "lucide-react";import ProductService from "../../api/service/product.service";
 import CartService from "../../api/service/cart.service";
 import { useNavigate } from "react-router-dom";
 import Toast from "../../components/ui/Toast";
@@ -33,6 +33,8 @@ export default function CustomProductPage() {
     const [step, setStep] = useState<1 | 2>(1); // 1: Chọn hộp, 2: Chọn đồ
     const [selectedBox, setSelectedBox] = useState<Product | null>(null);
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
+    const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
@@ -48,12 +50,18 @@ export default function CustomProductPage() {
                 const baseProducts = productsData.filter((p: Product) => p.isGift === false);
 
                 // TÁCH VỎ HỘP VÀ MÓN LẺ DỰA VÀO TÊN CATEGORY
-                // (Bạn có thể đổi 'hộp' thành tên danh mục hoặc ID thực tế của bạn)
+                // Hỗ trợ cả tiếng Anh (box) và tiếng Việt (hộp)
                 const boxList = baseProducts.filter((p: Product) => 
-                    p.category && p.category.name.toLowerCase().includes('box')
+                    p.category && (
+                        p.category.name.toLowerCase().includes('box') || 
+                        p.category.name.toLowerCase().includes('hộp')
+                    )
                 );
                 const itemList = baseProducts.filter((p: Product) => 
-                    !p.category || !p.category.name.toLowerCase().includes('box')
+                    !p.category || !(
+                        p.category.name.toLowerCase().includes('box') || 
+                        p.category.name.toLowerCase().includes('hộp')
+                    )
                 );
 
                 setBoxes(boxList);
@@ -96,6 +104,20 @@ export default function CustomProductPage() {
     const itemsPrice = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const totalPrice = boxPrice + itemsPrice;
 
+    // Xử lý chọn logo
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedLogo(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeLogo = () => {
+        setSelectedLogo(null);
+        setLogoPreview(null);
+    };
+
     // GỌI API TẠO HỘP QUÀ VÀ THÊM VÀO GIỎ
     const handleAddToCart = async () => {
         if (!selectedBox) {
@@ -120,6 +142,9 @@ export default function CustomProductPage() {
         try {
             const submitData = new FormData();
             submitData.append('product', JSON.stringify(productPayload));
+            if (selectedLogo) {
+                submitData.append('logo', selectedLogo);
+            }
             
             const productRes = await ProductService.createProduct(submitData);
             const newProduct = productRes?.data || productRes;
@@ -277,6 +302,34 @@ export default function CustomProductPage() {
                                                 <button onClick={() => removeItem(item.productId)} className="text-gray-400 hover:text-red-500"><X size={16} /></button>
                                             </div>
                                         ))
+                                    )}
+                                </div>
+
+                                {/* THÊM PHẦN TẢI LOGO DOANH NGHIỆP */}
+                                <div className="mb-6 pt-4 border-t border-dashed border-gray-200">
+                                    <p className="text-xs text-gray-500 font-bold uppercase mb-3 flex items-center gap-2">
+                                        <ImageIcon size={14} /> In Logo Doanh nghiệp (Tùy chọn)
+                                    </p>
+                                    
+                                    {!logoPreview ? (
+                                        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <Upload className="w-6 h-6 mb-2 text-gray-400" />
+                                                <p className="text-[10px] text-gray-500 font-medium">Tải lên logo (.png, .jpg)</p>
+                                            </div>
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
+                                        </label>
+                                    ) : (
+                                        <div className="relative group rounded-lg overflow-hidden border border-gray-200 bg-white p-2">
+                                            <img src={logoPreview} alt="Logo preview" className="w-full h-20 object-contain" />
+                                            <button 
+                                                onClick={removeLogo}
+                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                            <p className="text-[10px] text-center text-gray-400 mt-1 truncate">{selectedLogo?.name}</p>
+                                        </div>
                                     )}
                                 </div>
 

@@ -12,7 +12,6 @@ import com.sba301.giftshop.repository.CategoryRepository;
 import com.sba301.giftshop.repository.ProductItemRepository;
 import com.sba301.giftshop.repository.ProductRepository;
 import com.sba301.giftshop.repository.UserRepository;
-import com.sba301.giftshop.service.ProductService;
 import com.sba301.giftshop.util.mapper.ProductMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +32,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final ProductMapper productMapper;
+    private final ItemService itemService;
 
     @Override
     public List<ProductSumaryResponse> getAllProducts(Boolean onlyActive) {
@@ -44,7 +44,12 @@ public class ProductServiceImpl implements ProductService {
                 .filter(p -> p.getCreatedBy() == null || p.getCreatedBy().getRole() == Role.ADMIN)
                 .collect(Collectors.toList());
 
-        return productMapper.toSummaryResponseList(filteredProducts);
+        List<ProductSumaryResponse> responses = productMapper.toSummaryResponseList(filteredProducts);
+        for (ProductSumaryResponse res : responses) {
+            res.setBasePrice(itemService.calculateFefoPrice(res.getId(), res.getBasePrice()));
+            res.setExpiredDate(itemService.getEarliestExpiryDate(res.getId()));
+        }
+        return responses;
     }
 
     @Override
@@ -55,7 +60,10 @@ public class ProductServiceImpl implements ProductService {
         if (Boolean.TRUE.equals(product.getIsGift())) {
             product.setGiftComponents(productItemRepository.findByCustomGiftId(id));
         }
-        return productMapper.toResponse(product);
+        ProductResponse res = productMapper.toResponse(product);
+        res.setBasePrice(itemService.calculateFefoPrice(res.getId(), res.getBasePrice()));
+        res.setExpiredDate(itemService.getEarliestExpiryDate(res.getId()));
+        return res;
     }
 
     // Thêm Inject R2StorageService vào đầu file
@@ -63,7 +71,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse createProduct(ProductRequest request, MultipartFile image, Long creatorId) {
+    public ProductResponse createProduct(ProductRequest request, MultipartFile image, MultipartFile logo, Long creatorId) {
         User creator = userRepository.findById(creatorId).orElse(null);
         Category category = request.getCategoryId() != null
                 ? categoryRepository.findById(request.getCategoryId()).orElse(null)
@@ -90,7 +98,8 @@ public class ProductServiceImpl implements ProductService {
                     Product component = productRepository.findById(comp.getProductId())
                             .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm thành phần"));
 
-                    BigDecimal lineTotal = component.getBasePrice().multiply(BigDecimal.valueOf(comp.getQuantity()));
+                    BigDecimal componentPrice = itemService.calculateFefoPrice(component.getId(), component.getBasePrice());
+                    BigDecimal lineTotal = componentPrice.multiply(BigDecimal.valueOf(comp.getQuantity()));
                     totalSecurePrice = totalSecurePrice.add(lineTotal);
                 }
                 // Ghi đè giá bằng tổng tiền các món
@@ -105,10 +114,10 @@ public class ProductServiceImpl implements ProductService {
             productToSave.setIsActive(false);
         }
 
-        // Xử lý upload ảnh (nếu có)
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = r2StorageService.uploadFile(image);
-            productToSave.setImageUrl(imageUrl);
+        // Xử lý upload logo (nếu có)
+        if (logo != null && !logo.isEmpty()) {
+            String logoUrl = r2StorageService.uploadFile(logo);
+            productToSave.setLogoUrl(logoUrl);
         }
 
         Product savedProduct = productRepository.save(productToSave);
@@ -123,7 +132,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile image) {
+    public ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile image, MultipartFile logo) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
@@ -143,6 +152,11 @@ public class ProductServiceImpl implements ProductService {
         if (image != null && !image.isEmpty()) {
             String imageUrl = r2StorageService.uploadFile(image);
             product.setImageUrl(imageUrl);
+        }
+
+        if (logo != null && !logo.isEmpty()) {
+            String logoUrl = r2StorageService.uploadFile(logo);
+            product.setLogoUrl(logoUrl);
         }
         // Nếu image rỗng, giữ nguyên imageUrl cũ trong DB
 

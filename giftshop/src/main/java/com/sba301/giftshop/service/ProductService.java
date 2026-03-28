@@ -10,7 +10,7 @@ import java.util.List;
 public interface ProductService {
     List<ProductSumaryResponse> getAllProducts(Boolean onlyActive);
     ProductResponse getProductById(Long id);
-    ProductResponse createProduct(ProductRequest request, MultipartFile image, Long creatorId);
-    ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile image);
+    ProductResponse createProduct(ProductRequest request, MultipartFile image, MultipartFile logo, Long creatorId);
+    ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile image, MultipartFile logo);
     void toggleActiveStatus(Long id); // Soft delete
 }

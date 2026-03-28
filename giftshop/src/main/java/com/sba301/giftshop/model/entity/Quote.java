@@ -3,6 +3,7 @@ package com.sba301.giftshop.model.entity;
 import com.sba301.giftshop.model.enums.QuoteStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Nationalized;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -36,6 +37,16 @@ public class Quote {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "logo_url", length = 2000)
+    private String logoUrl;
+
+    @Nationalized
+    @Column(name = "custom_note", length = 1000)
+    private String customNote;
+
+    @Column(name = "deposit_amount")
+    private BigDecimal depositAmount;
 
     @OneToMany
     @JoinColumn(name = "quote_id")

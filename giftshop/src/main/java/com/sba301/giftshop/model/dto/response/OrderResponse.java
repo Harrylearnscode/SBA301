@@ -21,6 +21,9 @@ public class OrderResponse {
     private String shippingAddress;
     private String shipperPhoneNumber;
     private BigDecimal totalPrice;
+    private String customerName;
+    private String customerPhone;
+    private BigDecimal depositAmount;
     private Integer totalItem;
     private LocalDateTime orderDate;
     private LocalDateTime updateDate;

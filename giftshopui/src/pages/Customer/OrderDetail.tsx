@@ -5,6 +5,7 @@ import OrderService from '../../api/service/order.service';
 import UserService from '../../api/service/user.service';
 import ProductService from '../../api/service/product.service';
 import Toast from '../../components/ui/Toast';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 // Bộ từ điển trạng thái
 const ORDER_STATUS: Record<string, { label: string, color: string }> = {
@@ -29,6 +30,7 @@ export default function OrderDetail() {
     const [userPhone, setUserPhone] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
+    const [showConfirm, setShowConfirm] = useState(false);
 
     const fetchOrderDetail = async () => {
         try {
@@ -57,7 +59,7 @@ export default function OrderDetail() {
     }, [id]);
 
     const handleCancelOrder = async () => {
-        if (!window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
+        setShowConfirm(false); // Đóng modal trước khi xử lý
         try {
             const res = await OrderService.cancelOrder(id!); //
             if (res.success) {
@@ -68,6 +70,20 @@ export default function OrderDetail() {
             }
         } catch (error) {
             setToast({ show: true, message: 'Lỗi hệ thống khi hủy đơn', type: 'error' });
+        }
+    };
+
+    const handlePayment = async (type: 'DEPOSIT' | 'FULL') => {
+        try {
+            const res = await OrderService.getPaymentUrl(id!, type);
+            if (res.success && res.data) {
+                const url = res.data.paymentUrl || res.data.url || res.data;
+                window.location.href = url;
+            } else {
+                setToast({ show: true, message: res.message || 'Không thể tạo link thanh toán', type: 'error' });
+            }
+        } catch (error) {
+            setToast({ show: true, message: 'Lỗi hệ thống khi tạo thanh toán', type: 'error' });
         }
     };
 
@@ -135,6 +151,9 @@ export default function OrderDetail() {
                             <div className="space-y-2 text-gray-700">
                                 <p><strong>Trạng thái:</strong> <span className={order.payment === 'PAID' ? 'text-green-600 font-bold' : 'text-yellow-600 font-bold'}>{PAYMENT_STATUS[order.payment] || order.payment}</span></p>
                                 <p><strong>Giảm giá áp dụng:</strong> {order.discountApplied > 0 ? `${order.discountApplied}%` : 'Không có'}</p>
+                                {order.depositAmount > 0 && (
+                                    <p><strong>Cần cọc:</strong> <span className="text-[#b30000] font-bold">{formatPrice(order.depositAmount)}</span></p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -170,23 +189,60 @@ export default function OrderDetail() {
                         </div>
                     </div>
 
-                    {/* Tổng kết tiền & Nút Hủy */}
-                    <div className="bg-gray-50 p-6 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-gray-200">
-                        {order.status === 'PENDING' ? (
-                            <button 
-                                onClick={handleCancelOrder}
-                                className="w-full md:w-auto px-6 py-3 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2"
-                            >
-                                <XCircle size={18} /> Hủy đơn hàng này
-                            </button>
-                        ) : (
-                            <div className="text-sm text-gray-500 italic">
-                                {/* Chỗ trống giữ layout nếu không có nút hủy */}
-                                {order.status === 'CANCELLED' ? 'Đơn hàng đã được hủy.' : 'Đơn hàng đang được xử lý, không thể hủy.'}
-                            </div>
-                        )}
+                    {/* Tổng kết tiền & Nút Hành Động */}
+                    <div className="bg-gray-50 p-6 flex flex-col md:flex-row justify-between md:items-end gap-8 border-t border-gray-200">
+                        {/* Khu vực nút bấm */}
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full md:w-auto order-last md:order-first">
+                            {/* Nút Hủy đơn hàng - Cho phép hủy nếu chưa giao và chưa thanh toán/cọc */}
+                            {order.status !== 'SHIPPED' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (order.payment === 'UNPAID' || order.payment === 'FAILED') ? (
+                                <button 
+                                    onClick={() => setShowConfirm(true)}
+                                    className="px-6 py-3 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2"
+                                >
+                                    <XCircle size={18} /> Hủy đơn hàng
+                                </button>
+                            ) : (
+                                <div className="hidden md:block text-sm text-gray-500 italic max-w-xs">
+                                    {order.status === 'CANCELLED' ? 'Đơn hàng đã được hủy.' : 'Đơn hàng đang xử lý, không thể hủy.'}
+                                </div>
+                            )}
+                            
+                            {/* Nút thanh toán */}
+                            {order.payment !== 'PAID' && order.status !== 'CANCELLED' && (
+                                <>
+                                    {order.depositAmount > 0 ? (
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            {order.payment !== 'DEPOSIT' && (
+                                                <button 
+                                                    onClick={() => handlePayment('DEPOSIT')}
+                                                    className="px-6 py-3 border-2 border-[#b30000] text-[#b30000] font-bold rounded-lg hover:bg-red-50 transition w-full sm:w-auto"
+                                                >
+                                                    Thanh toán cọc ({formatPrice(order.depositAmount)})
+                                                </button>
+                                            )}
+                                            <button 
+                                                onClick={() => handlePayment('FULL')}
+                                                className="px-6 py-3 bg-[#b30000] text-white font-bold rounded-lg hover:bg-red-800 transition shadow-lg w-full sm:w-auto"
+                                            >
+                                                {order.payment === 'DEPOSIT' 
+                                                    ? `Thanh toán phần còn lại (${formatPrice(order.totalPrice - order.depositAmount)})` 
+                                                    : `Thanh toán toàn bộ (${formatPrice(order.totalPrice)})`
+                                                }
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={() => handlePayment('FULL')}
+                                            className="px-6 py-3 bg-[#b30000] text-white font-bold rounded-lg hover:bg-red-800 transition shadow-lg w-full sm:w-auto mt-2 sm:mt-0"
+                                        >
+                                            Thanh toán ngay ({formatPrice(order.totalPrice)})
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
 
-                        <div className="w-full md:w-auto text-right space-y-2">
+                        <div className="w-full md:w-auto text-right space-y-2 mt-4 md:mt-0">
                             <div className="flex justify-between md:justify-end gap-8 text-sm text-gray-500">
                                 <span>Tạm tính:</span>
                                 <span>{formatPrice(subTotal)}</span>
@@ -207,6 +263,16 @@ export default function OrderDetail() {
             </div>
             
             <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+            
+            <ConfirmModal 
+                show={showConfirm}
+                title="Xác nhận hủy đơn hàng"
+                message="Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác."
+                confirmText="Đồng ý hủy"
+                cancelText="Quay lại"
+                onConfirm={handleCancelOrder}
+                onCancel={() => setShowConfirm(false)}
+            />
         </div>
     );
 }

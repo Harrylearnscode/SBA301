@@ -4,9 +4,11 @@ import com.sba301.giftshop.model.dto.request.CheckoutRequest;
 import com.sba301.giftshop.model.dto.request.UpdateOrderStatusRequest;
 import com.sba301.giftshop.model.dto.request.UpdatePaymentStatusRequest;
 import com.sba301.giftshop.model.dto.response.ResponseObject;
+import com.sba301.giftshop.model.entity.Order;
 import com.sba301.giftshop.model.entity.User;
 import com.sba301.giftshop.repository.UserRepository;
 import com.sba301.giftshop.service.OrderService;
+import com.sba301.giftshop.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ public class OrderController {
 
     private final OrderService orderService;
     private final UserRepository userRepository;
+    private final PaymentService paymentService;
 
     private Long getCurrentUserId() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -51,6 +54,32 @@ public class OrderController {
         return ResponseEntity.ok(ResponseObject.builder()
                 .code("200").message("Thành công").isSuccess(true).status(HttpStatus.OK)
                 .data(orderService.getOrderById(id, getCurrentUserId()))
+                .build());
+    }
+
+    @GetMapping("/{id}/payment-url")
+    public ResponseEntity<ResponseObject> getPaymentUrl(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "FULL") String type) {
+        Order order = orderService.findById(id);
+        java.math.BigDecimal amount;
+        
+        if ("DEPOSIT".equalsIgnoreCase(type)) {
+            amount = order.getDepositAmount();
+        } else {
+            if (order.getPayment() == com.sba301.giftshop.model.enums.PaymentStatus.DEPOSIT && order.getDepositAmount() != null) {
+                amount = order.getTotalPrice().subtract(order.getDepositAmount());
+            } else {
+                amount = order.getTotalPrice();
+            }
+        }
+
+        return ResponseEntity.ok(ResponseObject.builder()
+                .code("200")
+                .message("Lấy link thanh toán thành công")
+                .data(paymentService.createPayment(id, amount, type))
+                .isSuccess(true)
+                .status(HttpStatus.OK)
                 .build());
     }
 

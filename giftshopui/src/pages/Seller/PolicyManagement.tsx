@@ -4,29 +4,33 @@ import {
   ArrowRight, Percent, CircleDollarSign, Info 
 } from 'lucide-react';
 import PolicyService from '../../api/service/policy.service';
+import Toast from '../../components/ui/Toast';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 export default function PolicyManager() {
   const [policies, setPolicies] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Form State theo đúng JSON yêu cầu
+  // Form State
   const [formData, setFormData] = useState({
     lowerLimit: 0,
     upperLimit: 0,
     discount: 0
   });
 
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
+  const [policyToDelete, setPolicyToDelete] = useState<number | null>(null);
+
   const fetchPolicies = async () => {
     try {
       const res = await PolicyService.getAllPolicies();
       if (res.success) {
-        // Sắp xếp chính sách theo hạn mức dưới tăng dần để dễ theo dõi
         const sorted = res.data.sort((a: any, b: any) => a.lowerLimit - b.lowerLimit);
         setPolicies(sorted);
       }
     } catch (error) {
-      console.error("Lỗi tải chính sách:", error);
+      setToast({ show: true, message: "Lỗi tải chính sách", type: 'error' });
     }
   };
 
@@ -60,24 +64,31 @@ export default function PolicyManager() {
       }
 
       if (res.success) {
+        setToast({ show: true, message: `${editingId ? 'Cập nhật' : 'Tạo'} chính sách thành công!`, type: 'success' });
         setIsModalOpen(false);
         fetchPolicies();
       } else {
-        alert(res.message || "Thao tác thất bại");
+        setToast({ show: true, message: res.message || "Thao tác thất bại", type: 'error' });
       }
     } catch (error) {
-      alert("Lỗi kết nối máy chủ");
+      setToast({ show: true, message: "Lỗi kết nối máy chủ", type: 'error' });
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa chính sách chiết khấu này?")) {
-      try {
-        const res = await PolicyService.deletePolicy(id);
-        if (res.success) fetchPolicies();
-      } catch (error) {
-        alert("Không thể xóa chính sách này");
+  const handleDelete = async () => {
+    if (!policyToDelete) return;
+    try {
+      const res = await PolicyService.deletePolicy(policyToDelete);
+      if (res.success) {
+        setToast({ show: true, message: "Đã xóa chính sách thành công", type: 'success' });
+        fetchPolicies();
+      } else {
+        setToast({ show: true, message: res.message || "Không thể xóa chính sách", type: 'error' });
       }
+    } catch (error) {
+      setToast({ show: true, message: "Không thể xóa chính sách này", type: 'error' });
+    } finally {
+      setPolicyToDelete(null);
     }
   };
 
@@ -149,7 +160,7 @@ export default function PolicyManager() {
                       <Edit size={18} />
                     </button>
                     <button 
-                      onClick={() => handleDelete(policy.id)}
+                      onClick={() => setPolicyToDelete(policy.id)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Xóa"
                     >
@@ -247,6 +258,18 @@ export default function PolicyManager() {
           </div>
         </div>
       )}
+
+      <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+      
+      <ConfirmModal 
+        show={!!policyToDelete}
+        title="Xác nhận xóa chính sách"
+        message="Bạn có chắc chắn muốn xóa chính sách chiết khấu này không? Hành động này sẽ ảnh hưởng đến việc tính giá sỉ."
+        confirmText="Xác nhận xóa"
+        cancelText="Hủy bỏ"
+        onConfirm={handleDelete}
+        onCancel={() => setPolicyToDelete(null)}
+      />
     </div>
   );
 }

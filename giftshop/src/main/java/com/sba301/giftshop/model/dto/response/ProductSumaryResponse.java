@@ -28,4 +28,5 @@ public class ProductSumaryResponse {
     private Boolean isGift;
 
     private Boolean isActive;
+    private java.time.LocalDate expiredDate;
 }

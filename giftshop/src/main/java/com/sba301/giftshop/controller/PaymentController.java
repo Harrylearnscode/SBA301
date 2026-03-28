@@ -20,8 +20,11 @@ public class PaymentController {
     private final PaymentService paymentService;
     
     @GetMapping("create-payment")
-    public PaymentResponse createPayment(@RequestParam Long orderId) {
-        return paymentService.createPayment(orderId);
+    public PaymentResponse createPayment(
+            @RequestParam Long orderId,
+            @RequestParam(required = false) java.math.BigDecimal amount,
+            @RequestParam(required = false, defaultValue = "FULL") String type) {
+        return paymentService.createPayment(orderId, amount, type);
     }
 
     @GetMapping("/vnpay_ipn")

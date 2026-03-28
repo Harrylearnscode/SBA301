@@ -24,6 +24,7 @@ public class QuoteResponse {
     private QuoteStatus status;
 
     private BigDecimal totalPrice;
+    private BigDecimal depositAmount;
 
     private LocalDateTime validUntil;
 

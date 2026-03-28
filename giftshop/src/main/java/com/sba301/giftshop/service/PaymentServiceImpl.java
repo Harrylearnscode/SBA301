@@ -4,7 +4,7 @@ import com.sba301.giftshop.configs.VnPayConfig;
 import com.sba301.giftshop.model.dto.response.IpnResponse;
 import com.sba301.giftshop.model.dto.response.PaymentResponse;
 import com.sba301.giftshop.model.entity.Order;
-import com.sba301.giftshop.model.enums.OrderStatus;
+
 import com.sba301.giftshop.model.enums.PaymentStatus;
 import com.sba301.giftshop.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,17 +31,23 @@ public class PaymentServiceImpl implements PaymentService {
 	private final OrderRepository orderRepository;
 
 	@Override
-	public PaymentResponse createPayment(Long orderId) {
-		String txnRef = String.valueOf(orderId);
+	public PaymentResponse createPayment(Long orderId, java.math.BigDecimal amount, String type) {
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new RuntimeException("Order not found"));
-		long amount = order.getTotalPrice().longValue() * 100;
+
+		java.math.BigDecimal finalAmount = (amount != null) ? amount : order.getTotalPrice();
+
+		// txnRef mới: orderId_TYPE_timestamp (timestamp để chống trùng lặp khi thanh toán lại)
+		String timestamp = new SimpleDateFormat("HHmmss").format(new java.util.Date());
+		String txnRef = orderId + "_" + type + "_" + timestamp;
+
+		long amountSats = finalAmount.multiply(java.math.BigDecimal.valueOf(100)).longValue();
 
 		Map<String, String> vnpParams = new HashMap<>();
 		vnpParams.put("vnp_Version", VnPayConfig.vnp_Version);
 		vnpParams.put("vnp_Command", VnPayConfig.vnp_Command);
 		vnpParams.put("vnp_TmnCode", VnPayConfig.vnp_TmnCode);
-		vnpParams.put("vnp_Amount", String.valueOf(amount));
+		vnpParams.put("vnp_Amount", String.valueOf(amountSats));
 		vnpParams.put("vnp_CurrCode", "VND");
 		vnpParams.put("vnp_TxnRef", txnRef);
 		vnpParams.put("vnp_OrderInfo", "Thanh toan don hang:" + txnRef);
@@ -113,8 +119,12 @@ public class PaymentServiceImpl implements PaymentService {
 
 		IpnResponse response;
 		try {
-			Long orderId = Long.parseLong(txnRef);
-			boolean updated = updatePaymentStatusToPaid(orderId);
+			// Parse txnRef (orderId_TYPE_timestamp)
+			String[] parts = txnRef.split("_");
+			Long orderId = Long.parseLong(parts[0]);
+			String type = parts.length > 1 ? parts[1] : "FULL";
+
+			boolean updated = updatePaymentStatus(orderId, type);
 
 			response = updated
 					? IpnResponse.builder().responseCode("00").message("Successful").build()
@@ -135,10 +145,15 @@ public class PaymentServiceImpl implements PaymentService {
 		return response;
 	}
 
-	private boolean updatePaymentStatusToPaid(Long orderId) {
+	private boolean updatePaymentStatus(Long orderId, String type) {
 		return orderRepository.findById(orderId)
 				.map(order -> {
-					order.setPayment(PaymentStatus.PAID);
+					if ("DEPOSIT".equalsIgnoreCase(type)) {
+						order.setPayment(PaymentStatus.DEPOSIT);
+					} else {
+						// Nếu là FULL hoặc REMAINING thì coi như đã trả đủ
+						order.setPayment(PaymentStatus.PAID);
+					}
 					order.setPaidTime(LocalDateTime.now());
 					orderRepository.save(order);
 					return true;

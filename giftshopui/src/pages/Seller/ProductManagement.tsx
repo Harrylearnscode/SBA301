@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, CheckCircle, XCircle, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';import ProductService from '../../api/service/product.service';
 import Toast from '../../components/ui/Toast';
 import CategoryService from '../../api/service/category.service';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 export default function ProductManagement() {
   const [products, setProducts] = useState<any[]>([]);
@@ -230,6 +231,7 @@ export default function ProductManagement() {
                 <th className="p-4 font-bold">Hình ảnh</th>
                 <th className="p-4 font-bold">Tên sản phẩm / SKU</th>
                 <th className="p-4 font-bold">Giá bán</th>
+                <th className="p-4 font-bold">Hạn sử dụng</th>
                 <th className="p-4 font-bold">Trạng thái</th>
                 <th className="p-4 font-bold text-center">Hành động</th>
               </tr>
@@ -256,6 +258,23 @@ export default function ProductManagement() {
                     </td>
                     <td className="p-4 font-semibold text-[#b30000]">
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.basePrice)}
+                    </td>
+                    <td className="p-4">
+                      {p.expiredDate ? (
+                        <div className="flex flex-col">
+                          <span className={`text-xs font-bold ${
+                            new Date(p.expiredDate) < new Date(new Date().setDate(new Date().getDate() + 15)) 
+                              ? 'text-red-600 animate-pulse' 
+                              : new Date(p.expiredDate) < new Date(new Date().setDate(new Date().getDate() + 30))
+                                ? 'text-amber-600'
+                                : 'text-gray-600'
+                          }`}>
+                            {new Date(p.expiredDate).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-300 italic">N/A</span>
+                      )}
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -426,41 +445,16 @@ export default function ProductManagement() {
       )}
 
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
-      {/* UI MODAL CONFIRM ẨN/HIỆN SẢN PHẨM */}
-      {itemToToggle && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${itemToToggle.isActive ? 'bg-red-50 text-red-500' : 'bg-green-50 text-green-500'}`}>
-                {itemToToggle.isActive ? <EyeOff size={32} /> : <Eye size={32} />}
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                {itemToToggle.isActive ? 'Ẩn sản phẩm này?' : 'Hiển thị sản phẩm này?'}
-              </h3>
-              <p className="text-gray-500 text-sm mb-6">
-                Bạn có chắc chắn muốn {itemToToggle.isActive ? 'ẩn' : 'hiển thị lại'} sản phẩm <br/>
-                <span className="font-bold text-gray-800">"{itemToToggle.name}"</span> trên trang Shop không?
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setItemToToggle(null)}
-                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmToggleActive}
-                  className={`flex-1 py-3 text-white font-bold rounded-xl transition shadow-lg ${itemToToggle.isActive ? 'bg-[#b30000] hover:bg-red-800 shadow-red-200' : 'bg-green-600 hover:bg-green-700 shadow-green-200'}`}
-                >
-                  Đồng ý {itemToToggle.isActive ? 'Ẩn' : 'Hiện'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal 
+        show={!!itemToToggle}
+        title={itemToToggle?.isActive ? 'Ẩn sản phẩm này?' : 'Hiển thị sản phẩm này?'}
+        message={`Bạn có chắc chắn muốn ${itemToToggle?.isActive ? 'ẩn' : 'hiển thị lại'} sản phẩm "${itemToToggle?.name}" trên trang Shop không?`}
+        confirmText={itemToToggle?.isActive ? 'Đồng ý Ẩn' : 'Đồng ý Hiện'}
+        cancelText="Hủy bỏ"
+        type={itemToToggle?.isActive ? 'warning' : 'info'}
+        onConfirm={confirmToggleActive}
+        onCancel={() => setItemToToggle(null)}
+      />
     </div>
   );
 }

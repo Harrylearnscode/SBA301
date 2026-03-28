@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -115,5 +116,36 @@ public class ItemServiceImpl implements ItemService {
 
             workbook.write(outputStream);
         }
+    }
+
+    @Override
+    public BigDecimal calculateFefoPrice(Long productId, BigDecimal basePrice) {
+        List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
+        if (availableItems.isEmpty()) {
+            return basePrice;
+        }
+        
+        Item oldestBatch = availableItems.get(0);
+        
+        if (oldestBatch.getExpiredDate() != null) {
+            long daysUntilExpiry = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), oldestBatch.getExpiredDate());
+            if (daysUntilExpiry <= 15) {
+                // Giảm 50%
+                return basePrice.multiply(BigDecimal.valueOf(0.50));
+            } else if (daysUntilExpiry <= 30) {
+                // Giảm 30%
+                return basePrice.multiply(BigDecimal.valueOf(0.70));
+            }
+        }
+        return basePrice;
+    }
+
+    @Override
+    public java.time.LocalDate getEarliestExpiryDate(Long productId) {
+        List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
+        if (availableItems.isEmpty()) {
+            return null;
+        }
+        return availableItems.get(0).getExpiredDate();
     }
 }

@@ -33,7 +33,26 @@ const QuoteService = {
         }
     },
 
-    // Đồng ý báo giá và gửi địa chỉ giao hàng
+    // Phản hồi báo giá (Đồng ý/Từ chối)
+    replyToQuote: async (id: string | number, isAccepted: boolean, shippingAddress?: string) => {
+        try {
+            const response = await axiosInstance.post(
+                API_ENDPOINTS.QUOTE.REPLY(id),
+                {},
+                {
+                    params: {
+                        isAccepted,
+                        shippingAddress
+                    }
+                }
+            );
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
+    // Đồng ý báo giá và gửi địa chỉ giao hàng (Shorthand)
     acceptQuote: async (id: string | number, request: { shippingAddress: string }) => {
         try {
             const response = await axiosInstance.post(

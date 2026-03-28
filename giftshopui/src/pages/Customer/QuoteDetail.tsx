@@ -40,8 +40,12 @@ export default function QuoteDetail() {
 
     const confirmReply = async () => {
         if (replyAction === null) return;
+        if (replyAction && !shippingAddress) {
+            alert('Vui lòng nhập địa chỉ giao hàng trước khi chốt giá!');
+            return;
+        }
         try {
-            const res = await QuoteService.replyToQuote(id!, replyAction);
+            const res = await QuoteService.replyToQuote(id!, replyAction, shippingAddress);
             if (res.success) {
                 setToast({ show: true, message: replyAction ? 'Đã chốt giá thành công!' : 'Đã từ chối báo giá', type: 'success' });
                 fetchQuoteDetail(); // Refresh lại data
@@ -94,6 +98,27 @@ export default function QuoteDetail() {
                         </div>
                     </div>
 
+                    {/* HIỂN THỊ LOGO DOANH NGHIỆP (B2B) */}
+                    {quote.logoUrl && (
+                        <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+                           <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Doanh nghiệp của bạn</span>
+                                <div className="h-0.5 w-10 bg-gray-200"></div>
+                           </div>
+                           <div className="h-16 w-32 border bg-white rounded-lg overflow-hidden p-1 shadow-sm">
+                                <img src={quote.logoUrl} alt="Business Logo" className="w-full h-full object-contain" />
+                           </div>
+                        </div>
+                    )}
+
+                    {/* HIỂN THỊ GHI CHÚ TÙY CHỈNH (B2B) */}
+                    {quote.customNote && (
+                        <div className="px-6 py-4 bg-amber-50/30 border-b border-gray-100 italic text-sm text-gray-600">
+                           <span className="font-bold text-amber-600 non-italic mr-2">Ghi chú từ Sale:</span>
+                           "{quote.customNote}"
+                        </div>
+                    )}
+
                     {/* Danh sách sản phẩm */}
                     <div className="p-6">
                         <h3 className="font-bold text-gray-800 mb-4 uppercase tracking-wider text-sm">Danh sách sản phẩm yêu cầu</h3>
@@ -103,6 +128,15 @@ export default function QuoteDetail() {
                                     <img src={item.product?.imageUrl || 'https://placehold.co/100'} alt="product" className="w-16 h-16 object-cover rounded border border-gray-200" />
                                     <div className="flex-1">
                                         <p className="font-bold text-gray-800">{item.product?.name}</p>
+                                        {item.product?.isGift && item.product?.giftComponents && item.product.giftComponents.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {item.product.giftComponents.map((comp: any) => (
+                                                    <span key={comp.id} className="text-[9px] bg-white text-gray-500 px-1.5 py-0.5 rounded border border-gray-100">
+                                                        {comp.product?.name} (x{comp.quantity})
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                         <p className="text-xs text-gray-500">Giá tham khảo: {formatPrice(item.product?.basePrice)}</p>
                                     </div>
                                     <div className="text-center px-4">
@@ -124,11 +158,25 @@ export default function QuoteDetail() {
                     <div className="bg-gray-50 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div>
                             <p className="text-sm font-bold text-gray-500 uppercase">Tổng tiền chốt (Dự kiến):</p>
-                            <p className="text-3xl font-bold text-[#b30000]">
-                                {quote.totalPrice > 0 ? formatPrice(quote.totalPrice) : 'Chưa có giá'}
-                            </p>
+                            {quote.status === 'QUOTED' || quote.status === 'ACCEPTED' ? (
+                                <div className="mt-1">
+                                    <p className="text-3xl font-bold text-[#b30000]">{formatPrice(quote.totalPrice)}</p>
+                                    {quote.depositAmount > 0 && (
+                                        <div className="inline-block mt-2 px-3 py-1.5 bg-red-50 border border-red-100 text-red-700 text-sm font-bold rounded-lg relative">
+                                            <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                                            <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
+                                            <span className="ml-2">Yêu cầu thanh toán cọc: {formatPrice(quote.depositAmount)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-3xl font-bold text-[#b30000]">
+                                    {quote.totalPrice > 0 ? formatPrice(quote.totalPrice) : 'Chưa có giá'}
+                                </p>
+                            )}
+                            
                             {quote.validUntil && quote.status === 'QUOTED' && (
-                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                                     <AlertCircle size={12} className="text-red-500" /> Báo giá có hiệu lực đến: {new Date(quote.validUntil).toLocaleDateString('vi-VN')}
                                 </p>
                             )}
@@ -182,9 +230,11 @@ export default function QuoteDetail() {
                             <h3 className="text-xl font-bold text-gray-900 mb-2">
                                 {replyAction ? 'Xác nhận chốt giá?' : 'Từ chối báo giá?'}
                             </h3>
-                            <p className="text-gray-500 text-sm mb-6">
+                            <p className="text-gray-500 text-sm mb-6 px-4">
                                 {replyAction 
-                                    ? 'Bạn đồng ý với mức giá Sale đã đề xuất? Đơn hàng sẽ được tiến hành ngay sau khi xác nhận.' 
+                                    ? (quote.depositAmount > 0 
+                                        ? `Đơn hàng sẽ được tạo và yêu cầu thanh toán cọc ${formatPrice(quote.depositAmount)} để hệ thống bắt đầu xử lý.` 
+                                        : 'Bạn đồng ý với mức giá Sale đã đề xuất? Đơn hàng sẽ được tiến hành ngay sau khi xác nhận.')
                                     : 'Bạn không hài lòng với mức giá này và muốn từ chối yêu cầu?'}
                             </p>
                             <div className="flex gap-3">

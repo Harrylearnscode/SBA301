@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ArrowLeft, X } from 'lucide-react';
+import { Trash2, ArrowLeft } from 'lucide-react';
 import CartService from '../../api/service/cart.service';
 import Toast from '../../components/ui/Toast';
 import QuoteService from '../../api/service/quote.service';
 import OrderService from '../../api/service/order.service';
+import ConfirmModal from '../../components/ui/ConfirmModal';
+
+interface ProductComponent {
+  id: number;
+  product: {
+    name: string;
+  };
+  quantity: number;
+}
 
 interface CartItem {
   id: number;
@@ -15,6 +24,8 @@ interface CartItem {
     description: string;
     basePrice: number;
     imageUrl: string;
+    isGift: boolean;
+    giftComponents?: ProductComponent[];
   };
 }
 
@@ -62,11 +73,11 @@ export default function Cart() {
       // Gửi API
       const res = await CartService.updateQuantity(cartItemId, newQty);
       if (!res.success) {
-        alert(res.message || "Lỗi cập nhật số lượng");
+        setToast({ show: true, message: res.message || "Lỗi cập nhật số lượng", type: "error" });
         fetchCart(); // Rollback UI nếu lỗi
       }
     } catch (err) {
-      alert("Lỗi kết nối máy chủ");
+      setToast({ show: true, message: "Lỗi kết nối máy chủ", type: "error" });
       fetchCart();
     }
   };
@@ -112,17 +123,8 @@ export default function Cart() {
     try {
       setIsCheckingOut(true);
       
-      // Map dữ liệu từ cartItems sang định dạng CheckoutRequest
+      // Map dữ liệu sang định dạng CheckoutRequest (Backend chỉ cần address vì lấy giỏ hàng từ DB)
       const payload = {
-        items: cartItems.map(item => ({
-          cartItemId: item.id,
-          productId: item.product.id,
-          quantity: item.quantity,
-          unitPrice: item.product.basePrice
-        })),
-        totalAmount: calculateTotal(),
-        shippingFee: 0, // Miễn phí vận chuyển
-        discountAmount: 0,
         shippingAddress: shippingAddress.trim()
       };
 
@@ -248,6 +250,15 @@ export default function Cart() {
                           <Link to={`/product/${item.product.id}`} className="font-bold text-sm text-[#b30000] hover:underline line-clamp-2">
                             {item.product.name}
                           </Link>
+                          {item.product.isGift && item.product.giftComponents && item.product.giftComponents.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1">
+                                {item.product.giftComponents.map(comp => (
+                                    <span key={comp.id} className="text-[10px] bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">
+                                        {comp.product.name} (x{comp.quantity})
+                                    </span>
+                                ))}
+                            </div>
+                          )}
                           <p className="text-xs text-gray-500 mt-1 line-clamp-1">{item.product.description}</p>
                         </div>
                       </div>
@@ -360,39 +371,18 @@ export default function Cart() {
         )}
       </div>
 
-      {/* UI MODAL CONFIRM XÓA SẢN PHẨM TRONG GIỎ */}
-      {itemToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-                <div className="p-6 text-center">
-                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Trash2 size={32} />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Xóa sản phẩm?</h3>
-                    <p className="text-gray-500 text-sm mb-6">
-                        Bạn có chắc chắn muốn bỏ <span className="font-bold text-gray-800">"{itemToDelete.name}"</span> ra khỏi giỏ hàng không?
-                    </p>
-                    <div className="flex gap-3">
-                        <button 
-                            onClick={() => setItemToDelete(null)} 
-                            className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
-                        >
-                            Giữ lại
-                        </button>
-                        <button 
-                            onClick={confirmRemoveItem} 
-                            className="flex-1 py-3 bg-[#b30000] text-white font-bold rounded-xl hover:bg-red-800 transition shadow-lg shadow-red-200"
-                        >
-                            Đồng ý xóa
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-      )}
-
       {/* COMPONENT THÔNG BÁO TOAST */}
       <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+
+      <ConfirmModal 
+        show={!!itemToDelete}
+        title="Xác nhận xóa sản phẩm"
+        message={`Bạn có chắc chắn muốn bỏ "${itemToDelete?.name}" ra khỏi giỏ hàng không?`}
+        confirmText="Đồng ý xóa"
+        cancelText="Giữ lại"
+        onConfirm={confirmRemoveItem}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

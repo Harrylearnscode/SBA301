@@ -36,6 +36,7 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentService paymentService;
     private final ProductRepository productRepository;
     private final ProductItemRepository productItemRepository;
+    private final ItemService itemService;
 
     @Override
     @Transactional
@@ -68,18 +69,21 @@ public class OrderServiceImpl implements OrderService {
             // Kiểm tra và trừ tồn kho theo FIFO
             deductInventory(product.getId(), requiredQty);
 
+            // Lấy giá FEFO
+            BigDecimal fefoPrice = itemService.calculateFefoPrice(product.getId(), product.getBasePrice());
+
             // Tạo OrderDetail lưu lại giá gốc tại thời điểm mua
             OrderDetail orderDetail = OrderDetail.builder()
                     .order(order)
                     .product(product)
-                    .unitPrice(product.getBasePrice())
+                    .unitPrice(fefoPrice)
                     .quantity(requiredQty)
                     .build();
 
             order.getOrderDetails().add(orderDetail);
 
             // Cộng dồn tổng tiền gốc và tổng số lượng
-            rawTotalPrice = rawTotalPrice.add(product.getBasePrice().multiply(BigDecimal.valueOf(requiredQty)));
+            rawTotalPrice = rawTotalPrice.add(fefoPrice.multiply(BigDecimal.valueOf(requiredQty)));
             totalItem += requiredQty;
 
 
@@ -107,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
         // 6. Làm rỗng giỏ hàng
         cartService.clearCart(userId);
 
-        PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId());
+        PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId(), savedOrder.getTotalPrice(), "FULL");
         String payUrl = vnpayResponse.getPaymentUrl();
 
         savedOrder.setPayUrl(payUrl);
@@ -151,8 +155,12 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Bạn không có quyền hủy đơn hàng này");
         }
 
-        if (order.getStatus() != OrderStatus.PENDING) {
-            throw new RuntimeException("Chỉ có thể hủy đơn hàng ở trạng thái Chờ xác nhận");
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.PROCESSING) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng ở trạng thái Chờ xác nhận hoặc Đang chuẩn bị");
+        }
+
+        if (order.getPayment() == PaymentStatus.PAID || order.getPayment() == PaymentStatus.DEPOSIT) {
+            throw new RuntimeException("Không thể hủy đơn hàng đã thanh toán hoặc đã đặt cọc");
         }
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -177,8 +185,26 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        order.setStatus(request.getStatus());
+        OrderStatus currentStatus = order.getStatus();
+        OrderStatus newStatus = request.getStatus();
+
+        if (!currentStatus.canTransitionTo(newStatus)) {
+            throw new RuntimeException(
+                "Không thể chuyển trạng thái từ '" + currentStatus + "' sang '" + newStatus + "'. " +
+                "Vui lòng tuân thủ quy trình: PENDING → PROCESSING → SHIPPED → DELIVERED."
+            );
+        }
+
+        order.setStatus(newStatus);
         order.setUpdateDate(LocalDateTime.now());
+
+        // Nếu hủy đơn, hoàn lại tồn kho
+        if (newStatus == OrderStatus.CANCELLED) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                restoreInventory(detail.getProduct().getId(), detail.getQuantity());
+            }
+        }
+
         return orderMapper.toResponse(orderRepository.save(order));
     }
 

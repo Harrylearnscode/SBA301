@@ -27,8 +27,10 @@ public class ProductResponse {
     private Boolean isGift;
 
     private Boolean isActive;
+    private String logoUrl;
 
     private UserResponse createdBy;
 
     private List<ProductItemReponse> giftComponents;
+    private java.time.LocalDate expiredDate;
 }

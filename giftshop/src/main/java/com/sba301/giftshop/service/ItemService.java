@@ -8,7 +8,7 @@ import com.sba301.giftshop.model.dto.response.ItemResponse;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface ItemService {
@@ -18,4 +18,6 @@ public interface ItemService {
     Integer getTotalAvailableQuantity(Long productId);
     List<ItemDetailResponse> getAllItems();
     void exportItemsToExcel(HttpServletResponse response) throws IOException;
+    BigDecimal calculateFefoPrice(Long productId, BigDecimal basePrice);
+    java.time.LocalDate getEarliestExpiryDate(Long productId);
 }
