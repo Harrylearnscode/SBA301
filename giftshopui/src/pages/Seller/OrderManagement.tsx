@@ -167,15 +167,16 @@ export default function OrderManager() {
               {loading ? (
                 <tr><td colSpan={5} className="p-20 text-center text-gray-400 font-black animate-pulse">ĐANG TẢI...</td></tr>
               ) : orders.map((order) => {
-                // Lấy SĐT từ detail đầu tiên (theo JSON của bạn)
-                const userPhone = order.orderDetails?.[0]?.product?.createdBy?.phone || "N/A";
+                const userPhone = order.customerPhone || "N/A";
+                const userName = order.customerName || "Khách vãng lai";
 
                 return (
                   <tr key={order.id} className="hover:bg-gray-50/50 transition-colors">
-                    {/* ID & Phone */}
+                    {/* ID & Phone & Name */}
                     <td className="p-5">
                       <div className="flex flex-col gap-1">
                         <span className="font-black text-gray-900 text-sm">#ORD-{order.id}</span>
+                        <span className="text-gray-700 text-[11px] font-bold">{userName}</span>
                         <span className="text-blue-600 text-[11px] font-black flex items-center gap-1 bg-blue-50 px-2 py-0.5 rounded-full w-fit">
                           <Phone size={10} strokeWidth={3} /> {userPhone}
                         </span>
@@ -302,16 +303,33 @@ export default function OrderManager() {
             {/* Content */}
             {!detailsLoading && selectedOrderDetails.orderDetails && (
               <div className="p-6 space-y-6">
-                {/* Thông tin giao hàng */}
-                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
-                  <div className="bg-blue-600 text-white p-2 rounded-lg shrink-0">
-                    <Truck size={18} />
+                {/* Thông tin khách hàng & giao hàng */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
+                    <div className="bg-blue-600 text-white p-2 rounded-lg shrink-0">
+                      <Phone size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-wider mb-1">Thông tin khách hàng</h4>
+                      <p className="text-sm font-bold text-gray-800">
+                        {selectedOrderDetails.customerName || "N/A"}
+                      </p>
+                      <p className="text-xs text-blue-600 font-black">
+                        {selectedOrderDetails.customerPhone || "N/A"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-wider mb-1">Địa chỉ giao hàng</h4>
-                    <p className="text-sm font-bold text-gray-800 leading-relaxed">
-                      {selectedOrderDetails.shippingAddress || "Chưa cung cấp địa chỉ"}
-                    </p>
+
+                  <div className="bg-amber-50/50 p-4 rounded-xl border border-amber-100 flex items-start gap-3">
+                    <div className="bg-amber-500 text-white p-2 rounded-lg shrink-0">
+                      <Truck size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-wider mb-1">Địa chỉ giao hàng</h4>
+                      <p className="text-sm font-bold text-gray-800 leading-relaxed">
+                        {selectedOrderDetails.shippingAddress || "Chưa cung cấp địa chỉ"}
+                      </p>
+                    </div>
                   </div>
                 </div>
 

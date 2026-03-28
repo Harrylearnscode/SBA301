@@ -19,4 +19,5 @@ public interface ItemService {
     List<ItemDetailResponse> getAllItems();
     void exportItemsToExcel(HttpServletResponse response) throws IOException;
     BigDecimal calculateFefoPrice(Long productId, BigDecimal basePrice);
+    java.time.LocalDate getEarliestExpiryDate(Long productId);
 }

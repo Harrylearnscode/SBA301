@@ -139,4 +139,13 @@ public class ItemServiceImpl implements ItemService {
         }
         return basePrice;
     }
+
+    @Override
+    public java.time.LocalDate getEarliestExpiryDate(Long productId) {
+        List<Item> availableItems = itemRepository.findAvailableItems(productId, LocalDate.now());
+        if (availableItems.isEmpty()) {
+            return null;
+        }
+        return availableItems.get(0).getExpiredDate();
+    }
 }

@@ -231,6 +231,7 @@ export default function ProductManagement() {
                 <th className="p-4 font-bold">Hình ảnh</th>
                 <th className="p-4 font-bold">Tên sản phẩm / SKU</th>
                 <th className="p-4 font-bold">Giá bán</th>
+                <th className="p-4 font-bold">Hạn sử dụng</th>
                 <th className="p-4 font-bold">Trạng thái</th>
                 <th className="p-4 font-bold text-center">Hành động</th>
               </tr>
@@ -257,6 +258,23 @@ export default function ProductManagement() {
                     </td>
                     <td className="p-4 font-semibold text-[#b30000]">
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.basePrice)}
+                    </td>
+                    <td className="p-4">
+                      {p.expiredDate ? (
+                        <div className="flex flex-col">
+                          <span className={`text-xs font-bold ${
+                            new Date(p.expiredDate) < new Date(new Date().setDate(new Date().getDate() + 15)) 
+                              ? 'text-red-600 animate-pulse' 
+                              : new Date(p.expiredDate) < new Date(new Date().setDate(new Date().getDate() + 30))
+                                ? 'text-amber-600'
+                                : 'text-gray-600'
+                          }`}>
+                            {new Date(p.expiredDate).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-300 italic">N/A</span>
+                      )}
                     </td>
                     <td className="p-4">
                       <span className={`px-2 py-1 text-xs font-semibold rounded-full ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>

@@ -111,7 +111,7 @@ public class OrderServiceImpl implements OrderService {
         // 6. Làm rỗng giỏ hàng
         cartService.clearCart(userId);
 
-        PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId());
+        PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId(), savedOrder.getTotalPrice(), "FULL");
         String payUrl = vnpayResponse.getPaymentUrl();
 
         savedOrder.setPayUrl(payUrl);
@@ -157,6 +157,10 @@ public class OrderServiceImpl implements OrderService {
 
         if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.PROCESSING) {
             throw new RuntimeException("Chỉ có thể hủy đơn hàng ở trạng thái Chờ xác nhận hoặc Đang chuẩn bị");
+        }
+
+        if (order.getPayment() == PaymentStatus.PAID || order.getPayment() == PaymentStatus.DEPOSIT) {
+            throw new RuntimeException("Không thể hủy đơn hàng đã thanh toán hoặc đã đặt cọc");
         }
 
         order.setStatus(OrderStatus.CANCELLED);

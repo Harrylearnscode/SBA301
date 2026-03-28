@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Clock, User, Phone, Send, UserPlus, Calendar, Package, Image as ImageIcon } from 'lucide-react';
 import QuoteService from '../../api/service/quote.service';
+import Toast from '../../components/ui/Toast';
+import ConfirmModal from '../../components/ui/ConfirmModal';
 
 export default function QuoteManager() {
   const [quotes, setQuotes] = useState<any[]>([]);
@@ -8,12 +10,16 @@ export default function QuoteManager() {
   const [pricingInputs, setPricingInputs] = useState<any>({});
 
   const [quoteToSubmit, setQuoteToSubmit] = useState<number | null>(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
   const fetchQuotes = async () => {
     try {
       const res = await QuoteService.getAllQuotes();
       if (res.success) {
-        setQuotes(res.data);
+        const sorted = res.data.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setQuotes(sorted);
       }
     } catch (error) {
       console.error("Lỗi tải danh sách báo giá:", error);
@@ -29,11 +35,11 @@ export default function QuoteManager() {
     try {
       const res = await QuoteService.assignToMe(quoteId);
       if (res.success) {
-        alert("Đã nhận yêu cầu thành công!");
+        setToast({ show: true, message: "Đã nhận yêu cầu thành công!", type: 'success' });
         fetchQuotes();
       }
     } catch (error) {
-      alert("Không thể nhận yêu cầu này.");
+      setToast({ show: true, message: "Không thể nhận yêu cầu này.", type: 'error' });
     }
   };
 
@@ -62,13 +68,13 @@ export default function QuoteManager() {
     }));
   };
 
-  // 4. Xử lý thay đổi logo và ghi chú
-  const handleLogoChange = (quoteId: number, value: string) => {
+  // 4. Xử lý thay đổi tiền cọc và ghi chú
+  const handleDepositChange = (quoteId: number, value: string) => {
     setPricingInputs((prev: any) => ({
       ...prev,
       [quoteId]: {
         ...prev[quoteId],
-        logoUrl: value
+        depositAmount: Number(value)
       }
     }));
   };
@@ -87,7 +93,7 @@ export default function QuoteManager() {
   const handleSubmitPricing = async (quoteId: number) => {
     const inputData = pricingInputs[quoteId];
     if (!inputData?.validUntil) {
-      alert("Vui lòng chọn thời hạn báo giá!");
+      setToast({ show: true, message: "Vui lòng chọn thời hạn báo giá!", type: 'error' });
       return;
     }
 
@@ -98,7 +104,7 @@ export default function QuoteManager() {
     }));
 
     if (itemPrices.length === 0) {
-      alert("Vui lòng nhập giá đề xuất cho ít nhất một sản phẩm!");
+      setToast({ show: true, message: "Vui lòng nhập giá đề xuất cho ít nhất một sản phẩm!", type: 'error' });
       return;
     }
 
@@ -106,17 +112,17 @@ export default function QuoteManager() {
       const payload = {
         validUntil: new Date(inputData.validUntil).toISOString(),
         itemPrices: itemPrices,
-        logoUrl: inputData.logoUrl || null,
+        depositAmount: inputData.depositAmount || null,
         customNote: inputData.customNote || null
       };
 
       const res = await QuoteService.providePricing(quoteId, payload);
       if (res.success) {
-        alert("Đã gửi báo giá thành công!");
+        setToast({ show: true, message: "Đã gửi báo giá thành công!", type: 'success' });
         fetchQuotes();
       }
     } catch (error) {
-      alert("Lỗi khi gửi báo giá.");
+      setToast({ show: true, message: "Lỗi khi gửi báo giá.", type: 'error' });
     }
   };
 
@@ -291,16 +297,33 @@ export default function QuoteManager() {
                       </div>
                     </div>
 
-                    {/* THÊM: LOGO VÀ GHI CHÚ B2B */}
+                    {/* HIỂN THỊ LOGO KHÁCH YÊU CẦU */}
+                    {quote.logoUrl && (
+                      <div className="p-4 border border-dashed border-indigo-200 rounded-xl bg-indigo-50/50 flex flex-col md:flex-row items-center md:items-start gap-4 mb-4">
+                        <div className="w-20 h-20 bg-white rounded-lg p-1 border shadow-sm shrink-0">
+                          <img src={quote.logoUrl} alt="Logo yêu cầu" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="text-center md:text-left">
+                          <p className="text-xs font-bold text-indigo-900 uppercase mb-1 flex items-center justify-center md:justify-start gap-1">
+                            <ImageIcon size={14} /> Khách có gửi Logo Doanh nghiệp
+                          </p>
+                          <a href={quote.logoUrl} target="_blank" rel="noreferrer" className="text-[11px] text-indigo-600 hover:text-indigo-800 underline">
+                            Xem ảnh gốc
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SỐ TIỀN CỌC */}
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Logo Doanh nghiệp (URL - B2B):</label>
+                      <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Số tiền cọc (VNĐ):</label>
                       <div className="relative">
-                        <ImageIcon size={16} className="absolute left-3 top-2.5 text-gray-400" />
+                        <span className="absolute left-3 top-2.5 text-gray-400 font-bold">đ</span>
                         <input 
-                          type="text" 
-                          placeholder="https://example.com/logo.png"
-                          className="w-full border rounded-lg p-2.5 pl-10 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-                          onChange={(e) => handleLogoChange(quote.id, e.target.value)}
+                          type="number" 
+                          placeholder="VD: 500000"
+                          className="w-full border rounded-lg p-2.5 pl-8 text-sm outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-700 bg-white"
+                          onChange={(e) => handleDepositChange(quote.id, e.target.value)}
                         />
                       </div>
                     </div>
@@ -341,39 +364,23 @@ export default function QuoteManager() {
           </div>
         ))}
       </div>
+      
+      {/* Toast thông báo */}
+      <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
+
       {/* MODAL CONFIRM: GỬI BÁO GIÁ CHO KHÁCH */}
-      {quoteToSubmit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Gửi báo giá?</h3>
-              <p className="text-gray-500 text-sm mb-6">
-                Bạn có chắc chắn muốn chốt mức giá này và gửi cho khách hàng? Khách hàng sẽ nhận được thông báo ngay lập tức.
-              </p>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setQuoteToSubmit(null)} 
-                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
-                >
-                  Kiểm tra lại
-                </button>
-                <button 
-                  onClick={() => {
-                    handleSubmitPricing(quoteToSubmit);
-                    setQuoteToSubmit(null);
-                  }} 
-                  className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
-                >
-                  Xác nhận Gửi
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal 
+        show={quoteToSubmit !== null}
+        title="Gửi báo giá?"
+        message="Bạn có chắc chắn muốn chốt mức giá này và gửi cho khách hàng? Khách hàng sẽ nhận được thông báo ngay lập tức."
+        onConfirm={() => {
+            if (quoteToSubmit) handleSubmitPricing(quoteToSubmit);
+            setQuoteToSubmit(null);
+        }}
+        onCancel={() => setQuoteToSubmit(null)}
+        confirmText="Xác nhận Gửi"
+        cancelText="Kiểm tra lại"
+      />
     </div>
   );
 }

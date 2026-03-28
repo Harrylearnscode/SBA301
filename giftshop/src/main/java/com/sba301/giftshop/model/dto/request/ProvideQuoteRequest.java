@@ -18,6 +18,7 @@ public class ProvideQuoteRequest {
     private List<QuoteItemPriceRequest> itemPrices;
     private String logoUrl;      // URL logo doanh nghiệp (cho Custom Gift B2B)
     private String customNote;   // Ghi chú tùy chỉnh từ Sale
+    private BigDecimal depositAmount; // Số tiền cọc yêu cầu
 
     @Data
     @NoArgsConstructor

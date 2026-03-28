@@ -77,6 +77,19 @@ const UserService = {
         } catch (error) {
             throw handleApiError(error);
         }
+    },
+
+    /**
+     * Cập nhật thông tin profile hiện tại
+     * @param request Dữ liệu cập nhật
+     */
+    updateMyProfile: async (request: any) => {
+        try {
+            const response = await axiosInstance.put(API_ENDPOINTS.USER.UPDATE_CURRENT, request);
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
     }
 };
 

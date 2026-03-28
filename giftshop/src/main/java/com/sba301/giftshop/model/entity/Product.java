@@ -42,6 +42,9 @@ public class Product {
     @Column(name = "is_active")
     private Boolean isActive;
 
+    @Column(name = "logo_url")
+    private String logoUrl;
+
     @ManyToOne
     @JoinColumn(name = "created_by")
     private User createdBy;

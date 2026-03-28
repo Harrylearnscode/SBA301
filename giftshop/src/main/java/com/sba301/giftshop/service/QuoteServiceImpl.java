@@ -9,7 +9,7 @@ import com.sba301.giftshop.model.enums.OrderStatus;
 import com.sba301.giftshop.model.enums.PaymentStatus;
 import com.sba301.giftshop.model.dto.response.PaymentResponse;
 import com.sba301.giftshop.repository.*;
-import com.sba301.giftshop.service.QuoteService;
+
 import com.sba301.giftshop.util.mapper.QuoteMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -69,6 +69,11 @@ public class QuoteServiceImpl implements QuoteService {
 
             quoteProductRepository.save(quoteProduct);
             savedQuote.getQuoteProducts().add(quoteProduct);
+
+            // TỰ ĐỘNG LẤY LOGO TỪ SẢN PHẨM (Nếu là Custom Gift có logo)
+            if (savedQuote.getLogoUrl() == null && quoteProduct.getProduct() != null && quoteProduct.getProduct().getLogoUrl() != null) {
+                savedQuote.setLogoUrl(quoteProduct.getProduct().getLogoUrl());
+            }
         }
 
         return quoteMapper.toResponse(savedQuote);
@@ -151,7 +156,7 @@ public class QuoteServiceImpl implements QuoteService {
             Order savedOrder = orderRepository.save(order);
 
             // Tạo link thanh toán
-            PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId());
+            PaymentResponse vnpayResponse = paymentService.createPayment(savedOrder.getId(), savedOrder.getTotalPrice(), "FULL");
             String payUrl = vnpayResponse.getPaymentUrl();
             savedOrder.setPayUrl(payUrl);
             savedOrder.setPaidTime(null);
@@ -159,6 +164,13 @@ public class QuoteServiceImpl implements QuoteService {
 
             // Liên kết 1-1 giữa Quote và Order
             quote.setOrder(savedOrder);
+
+            // SAO CHÉP THÔNG TIN CỌC VÀ LOGO TỪ QUOTE -> ORDER
+            savedOrder.setDepositAmount(quote.getDepositAmount());
+            if (quote.getLogoUrl() != null) {
+                // Ta có thể lưu logoUrl vào ghi chú đơn hàng hoặc mapping vào sp. 
+                // Ở đây ta đơn giản là đảm bảo Quote vẫn giữ logo để Admin check.
+            }
         } else {
             quote.setStatus(QuoteStatus.REJECTED);
         }
@@ -242,12 +254,8 @@ public class QuoteServiceImpl implements QuoteService {
         quote.setValidUntil(request.getValidUntil());
         quote.setStatus(QuoteStatus.QUOTED); // Chuyển trạng thái để khách hàng thấy được giá
 
-        // Lưu thông tin logo và ghi chú tùy chỉnh (B2B Custom Gift)
-        if (request.getLogoUrl() != null) {
-            quote.setLogoUrl(request.getLogoUrl());
-        }
-        if (request.getCustomNote() != null) {
-            quote.setCustomNote(request.getCustomNote());
+        if (request.getDepositAmount() != null) {
+            quote.setDepositAmount(request.getDepositAmount());
         }
 
         return quoteMapper.toResponse(quoteRepository.save(quote));

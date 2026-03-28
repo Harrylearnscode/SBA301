@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, FileText, Clock, ChevronRight, AlertCircle } from 'lucide-react';
 import OrderService from '../../api/service/order.service';
 import QuoteService from '../../api/service/quote.service';
@@ -102,7 +102,27 @@ export default function HistoryPage() {
                                                 </div>
                                                 <div className="text-sm text-gray-500 space-y-1">
                                                     <p className="flex items-center gap-1"><Clock size={14}/> Đặt lúc: {formatDate(order.orderDate)}</p>
-                                                    <p>Số lượng: {order.totalItem} sản phẩm</p>
+                                                    <p>Tổng cộng: <span className="font-bold text-gray-700">{order.totalItem} sản phẩm</span></p>
+                                                </div>
+
+                                                {/* Hiển thị chi tiết sản phẩm (MỚI) */}
+                                                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+                                                    {order.orderDetails?.slice(0, 2).map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 border rounded overflow-hidden shrink-0 bg-gray-50">
+                                                                <img src={item.product?.imageUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt="" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-gray-800 line-clamp-1">{item.product?.name}</p>
+                                                                <p className="text-xs text-gray-500">x{item.quantity}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {order.orderDetails?.length > 2 && (
+                                                        <p className="text-xs text-blue-600 font-medium italic mt-1">
+                                                            + {order.orderDetails.length - 2} sản phẩm khác...
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="text-left sm:text-right w-full sm:w-auto flex flex-row sm:flex-col items-center sm:items-end justify-between">
@@ -137,7 +157,27 @@ export default function HistoryPage() {
                                                 </div>
                                                 <div className="text-sm text-gray-500 space-y-1">
                                                     <p className="flex items-center gap-1"><Clock size={14}/> Gửi lúc: {formatDate(quote.createdAt)}</p>
-                                                    <p>Gồm: {quote.quoteProducts?.length || 0} loại sản phẩm</p>
+                                                    <p>Gồm: <span className="font-bold text-gray-700">{quote.quoteProducts?.length || 0} loại sản phẩm</span></p>
+                                                </div>
+
+                                                {/* Hiển thị chi tiết sản phẩm (MỚI) */}
+                                                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+                                                    {quote.quoteProducts?.slice(0, 2).map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 border rounded overflow-hidden shrink-0 bg-gray-50">
+                                                                <img src={item.product?.imageUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt="" />
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm font-semibold text-gray-800 line-clamp-1">{item.product?.name}</p>
+                                                                <p className="text-xs text-gray-500">x{item.quantity}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                    {quote.quoteProducts && quote.quoteProducts.length > 2 && (
+                                                        <p className="text-xs text-blue-600 font-medium italic mt-1">
+                                                            + {quote.quoteProducts.length - 2} sản phẩm khác...
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="text-left sm:text-right w-full sm:w-auto flex flex-row sm:flex-col items-center sm:items-end justify-between">

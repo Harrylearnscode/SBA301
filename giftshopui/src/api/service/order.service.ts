@@ -66,6 +66,18 @@ const OrderService = {
         }
     },
 
+    /**
+     * Lấy link thanh toán động (Cọc/Toàn bộ)
+     */
+    getPaymentUrl: async (id: string | number, type: 'DEPOSIT' | 'FULL' = 'FULL') => {
+        try {
+            const response = await axiosInstance.get(`${API_ENDPOINTS.ORDER.GET_BY_ID(id)}/payment-url?type=${type}`);
+            return response.data;
+        } catch (error) {
+            throw handleApiError(error);
+        }
+    },
+
     // --- API CHO ADMIN ---
 
     /**

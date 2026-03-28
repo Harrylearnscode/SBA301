@@ -21,6 +21,7 @@ public class ProductRequest {
     private String imageUrl;
     private Boolean isGift;
     private Boolean isActive;
+    private String logoUrl;
 
     // Danh sách các sản phẩm thành phần. Chỉ truyền lên khi isGift = true
     private List<ProductItemRequest> giftComponents;

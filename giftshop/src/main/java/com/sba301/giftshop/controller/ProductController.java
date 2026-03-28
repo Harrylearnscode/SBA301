@@ -51,7 +51,8 @@ public class ProductController {
             // Dòng này báo cho Swagger biết hãy vẽ giao diện JSON của ProductRequest
             @Parameter(schema = @Schema(implementation = ProductRequest.class))
             @RequestPart("product") String productJson,
-            @RequestPart(value = "image", required = false) MultipartFile image) throws JsonProcessingException {
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestPart(value = "logo", required = false) MultipartFile logo) throws JsonProcessingException {
 
         // Java vẫn nhận String để tránh lỗi, rồi tự convert an toàn
         ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
@@ -60,7 +61,7 @@ public class ProductController {
         return ResponseEntity.ok(ResponseObject.builder()
                 .code("201")
                 .message("Tạo sản phẩm thành công")
-                .data(productService.createProduct(request, image, userId))
+                .data(productService.createProduct(request, image, logo, userId))
                 .isSuccess(true)
                 .status(HttpStatus.CREATED)
                 .build());
@@ -72,7 +73,8 @@ public class ProductController {
             // Thêm annotation tương tự cho hàm Update
             @Parameter(schema = @Schema(implementation = ProductRequest.class))
             @RequestPart("product") String productJson,
-            @RequestPart(value = "image", required = false) MultipartFile image
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @RequestPart(value = "logo", required = false) MultipartFile logo
     ) throws JsonProcessingException {
 
         ProductRequest request = objectMapper.readValue(productJson, ProductRequest.class);
@@ -80,7 +82,7 @@ public class ProductController {
         return ResponseEntity.ok(ResponseObject.builder()
                 .code("200")
                 .message("Cập nhật sản phẩm thành công")
-                .data(productService.updateProduct(id, request, image))
+                .data(productService.updateProduct(id, request, image, logo))
                 .isSuccess(true)
                 .status(HttpStatus.OK)
                 .build());

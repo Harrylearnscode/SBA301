@@ -158,11 +158,25 @@ export default function QuoteDetail() {
                     <div className="bg-gray-50 p-6 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div>
                             <p className="text-sm font-bold text-gray-500 uppercase">Tổng tiền chốt (Dự kiến):</p>
-                            <p className="text-3xl font-bold text-[#b30000]">
-                                {quote.totalPrice > 0 ? formatPrice(quote.totalPrice) : 'Chưa có giá'}
-                            </p>
+                            {quote.status === 'QUOTED' || quote.status === 'ACCEPTED' ? (
+                                <div className="mt-1">
+                                    <p className="text-3xl font-bold text-[#b30000]">{formatPrice(quote.totalPrice)}</p>
+                                    {quote.depositAmount > 0 && (
+                                        <div className="inline-block mt-2 px-3 py-1.5 bg-red-50 border border-red-100 text-red-700 text-sm font-bold rounded-lg relative">
+                                            <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                                            <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"></span>
+                                            <span className="ml-2">Yêu cầu thanh toán cọc: {formatPrice(quote.depositAmount)}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-3xl font-bold text-[#b30000]">
+                                    {quote.totalPrice > 0 ? formatPrice(quote.totalPrice) : 'Chưa có giá'}
+                                </p>
+                            )}
+                            
                             {quote.validUntil && quote.status === 'QUOTED' && (
-                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                                     <AlertCircle size={12} className="text-red-500" /> Báo giá có hiệu lực đến: {new Date(quote.validUntil).toLocaleDateString('vi-VN')}
                                 </p>
                             )}
@@ -216,9 +230,11 @@ export default function QuoteDetail() {
                             <h3 className="text-xl font-bold text-gray-900 mb-2">
                                 {replyAction ? 'Xác nhận chốt giá?' : 'Từ chối báo giá?'}
                             </h3>
-                            <p className="text-gray-500 text-sm mb-6">
+                            <p className="text-gray-500 text-sm mb-6 px-4">
                                 {replyAction 
-                                    ? 'Bạn đồng ý với mức giá Sale đã đề xuất? Đơn hàng sẽ được tiến hành ngay sau khi xác nhận.' 
+                                    ? (quote.depositAmount > 0 
+                                        ? `Đơn hàng sẽ được tạo và yêu cầu thanh toán cọc ${formatPrice(quote.depositAmount)} để hệ thống bắt đầu xử lý.` 
+                                        : 'Bạn đồng ý với mức giá Sale đã đề xuất? Đơn hàng sẽ được tiến hành ngay sau khi xác nhận.')
                                     : 'Bạn không hài lòng với mức giá này và muốn từ chối yêu cầu?'}
                             </p>
                             <div className="flex gap-3">

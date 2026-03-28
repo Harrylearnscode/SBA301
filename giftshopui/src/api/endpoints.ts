@@ -1,4 +1,4 @@
-﻿const API_ENDPOINTS = {
+const API_ENDPOINTS = {
     AUTH: {
         LOGIN: '/auth/login',
         REGISTER: '/auth/register',
@@ -61,6 +61,7 @@
         GET_BY_ID_ADMIN: (id: string | number) => `/orders/admin/${id}`,
         UPDATE_STATUS: (id: string | number) => `/orders/admin/${id}/status`,
         UPDATE_PAYMENT: (id: string | number) => `/orders/admin/${id}/payment`,
+        GET_PAYMENT_URL: (id: string | number) => `/orders/${id}/payment-url`,
     },
 
     USER: {
@@ -70,6 +71,7 @@
         UPDATE: (id: string | number) => `/users/${id}`,
         DELETE: (id: string | number) => `/users/${id}`,
         CURRENT: '/users/me',
+        UPDATE_CURRENT: '/users/me',
     },
 
     POLICY: {

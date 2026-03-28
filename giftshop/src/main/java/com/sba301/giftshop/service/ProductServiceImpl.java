@@ -47,6 +47,7 @@ public class ProductServiceImpl implements ProductService {
         List<ProductSumaryResponse> responses = productMapper.toSummaryResponseList(filteredProducts);
         for (ProductSumaryResponse res : responses) {
             res.setBasePrice(itemService.calculateFefoPrice(res.getId(), res.getBasePrice()));
+            res.setExpiredDate(itemService.getEarliestExpiryDate(res.getId()));
         }
         return responses;
     }
@@ -61,6 +62,7 @@ public class ProductServiceImpl implements ProductService {
         }
         ProductResponse res = productMapper.toResponse(product);
         res.setBasePrice(itemService.calculateFefoPrice(res.getId(), res.getBasePrice()));
+        res.setExpiredDate(itemService.getEarliestExpiryDate(res.getId()));
         return res;
     }
 
@@ -69,7 +71,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse createProduct(ProductRequest request, MultipartFile image, Long creatorId) {
+    public ProductResponse createProduct(ProductRequest request, MultipartFile image, MultipartFile logo, Long creatorId) {
         User creator = userRepository.findById(creatorId).orElse(null);
         Category category = request.getCategoryId() != null
                 ? categoryRepository.findById(request.getCategoryId()).orElse(null)
@@ -112,10 +114,10 @@ public class ProductServiceImpl implements ProductService {
             productToSave.setIsActive(false);
         }
 
-        // Xử lý upload ảnh (nếu có)
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = r2StorageService.uploadFile(image);
-            productToSave.setImageUrl(imageUrl);
+        // Xử lý upload logo (nếu có)
+        if (logo != null && !logo.isEmpty()) {
+            String logoUrl = r2StorageService.uploadFile(logo);
+            productToSave.setLogoUrl(logoUrl);
         }
 
         Product savedProduct = productRepository.save(productToSave);
@@ -130,7 +132,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile image) {
+    public ProductResponse updateProduct(Long id, ProductRequest request, MultipartFile image, MultipartFile logo) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
@@ -150,6 +152,11 @@ public class ProductServiceImpl implements ProductService {
         if (image != null && !image.isEmpty()) {
             String imageUrl = r2StorageService.uploadFile(image);
             product.setImageUrl(imageUrl);
+        }
+
+        if (logo != null && !logo.isEmpty()) {
+            String logoUrl = r2StorageService.uploadFile(logo);
+            product.setLogoUrl(logoUrl);
         }
         // Nếu image rỗng, giữ nguyên imageUrl cũ trong DB
 

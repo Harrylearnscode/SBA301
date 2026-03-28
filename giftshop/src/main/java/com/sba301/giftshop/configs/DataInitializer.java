@@ -51,21 +51,21 @@ public class DataInitializer implements CommandLineRunner {
         // 3. Khởi tạo Sản phẩm
         
         // Nhóm 1: Sản phẩm cốt lõi
-        Product p1 = initProduct("Hộp Quà Tết Thịnh Vượng 2026", "HQ-TV-26", "1500000", "Hộp quà Tết cao cấp.", "https://bizweb.dktcdn.net/100/409/006/products/hp-qu-tt-chcan-h-p-10.jpg?v=1637508092283", true, catGiftBox, admin);
-        Product p2 = initProduct("Hạt Điều Rang Muối Bình Phước (500g)", "HD-BP-500", "180000", "Hạt điều loại 1.", "https://product.hstatic.net/200000452317/product/hat-dieu-rang-muoi-a-coi-1_9e47228801d94bd9b01ddfceb3c3dced_master.jpg", false, catNut, admin);
-        Product p3 = initProduct("Rượu Vang Đỏ Chile Cabernet Sauvignon", "RV-CHI-01", "850000", "Vang đỏ nhập khẩu.", "https://khoruou.com/wp-content/uploads/2020/08/ruou-vang-chile-1865-cabernet-sauvignon.jpg", false, catWine, admin);
+        Product p1 = initProduct("Hộp Quà Tết Thịnh Vượng 2026", "HQ-TV-26", "1500000", "Hộp quà Tết cao cấp.", "/images/products/thinh_vuong_gift.png", true, catGiftBox, admin);
+        Product p2 = initProduct("Hạt Điều Rang Muối Bình Phước (500g)", "HD-BP-500", "180000", "Hạt điều loại 1, to đều, rang muối đậm đà.", "/images/products/cashew_nut.png", false, catNut, admin);
+        Product p3 = initProduct("Rượu Vang Đỏ Chile Cabernet Sauvignon", "RV-CHI-01", "850000", "Vang đỏ nhập khẩu từ Chile, hương vị nồng nàn.", "/images/products/chile_wine.png", false, catWine, admin);
 
         // Nhóm 2: Vỏ hộp cho Custom Gift
-        Product p4 = initProduct("Vỏ Hộp Gỗ Cao Cấp", "BOX-WOOD-01", "150000", "Vỏ hộp gỗ sang trọng dùng để custom.", "https://bizweb.dktcdn.net/100/409/006/products/hp-qu-tt-chcan-h-p-10.jpg?v=1637508092283", false, catGiftBox, admin);
-        Product p5 = initProduct("Vỏ Hộp Giấy Carton Lễ Hội", "BOX-CART-02", "50000", "Vỏ hộp giấy in họa tiết Tết.", "https://down-vn.imgsusercontent.com/file/vn-11134201-7qu5l-lgrf3o2x9q9v9d", false, catGiftBox, admin);
+        Product p4 = initProduct("Vỏ Hộp Gỗ Cao Cấp", "BOX-WOOD-01", "150000", "Vỏ hộp gỗ sang trọng dùng để thiết kế quà riêng.", "/images/products/wood_box.png", false, catGiftBox, admin);
+        Product p5 = initProduct("Vỏ Hộp Giấy Carton Lễ Hội", "BOX-CART-02", "50000", "Vỏ hộp giấy in họa tiết Tết truyền thống.", "/images/products/carton_box.png", false, catGiftBox, admin);
 
         // Nhóm 3: Các sản phẩm lẻ mới (Trà, Bánh, Mứt)
-        Product p6 = initProduct("Trà Ô Long Thượng Hạng", "TEA-OL-01", "120000", "Trà ô long vùng cao.", "https://traolong.com/wp-content/uploads/2019/11/tra-o-long-thanh-tam-250g-1.jpg", false, catTea, admin);
-        Product p7 = initProduct("Cà Phê Arabica Cầu Đất", "COF-AR-02", "250000", "Cà phê hạt rang mộc.", "https://caphecaudat.com/wp-content/uploads/2020/07/arabica-cau-dat-1.jpg", false, catTea, admin);
-        Product p8 = initProduct("Bánh Quy Bơ Danisa (200g)", "SWE-B-01", "65000", "Bánh quy nhập khẩu.", "https://cdn.tgdd.vn/Products/Images/3364/79899/bh-danisa-200g-20230807-151025-600x600.jpg", false, catSweet, admin);
-        Product p9 = initProduct("Kẹo Dẻo Trái Cây Mix", "SWE-K-02", "45000", "Kẹo dẻo hương vị tự nhiên.", "https://lzd-img-global.slatic.net/g/p/6d3c1664fb979e2c4864f1c9f80c6c6b.jpg", false, catSweet, admin);
-        Product p10 = initProduct("Xoài Sấy Dẻo (150g)", "DRI-X-01", "85000", "Xoài sấy dẻo không đường.", "https://nonglamfood.com/wp-content/uploads/2019/07/xoai-say-deo-nong-lam-food.jpg", false, catDried, admin);
-        Product p11 = initProduct("Mứt Dừa Non Sữa", "DRI-D-02", "95000", "Mứt dừa đặc sản Bến Tre.", "https://mutduanonbentre.com/wp-content/uploads/2020/01/mut-dua-non-sua.jpg", false, catDried, admin);
+        Product p6 = initProduct("Trà Ô Long Thượng Hạng", "TEA-OL-01", "120000", "Trà ô long vùng cao, hương thơm thanh khiết.", "/images/products/oolong_tea.png", false, catTea, admin);
+        Product p7 = initProduct("Cà Phê Arabica Cầu Đất", "COF-AR-02", "250000", "Cà phê hạt rang mộc, vị chua thanh tự nhiên.", "/images/products/arabica_coffee.png", false, catTea, admin);
+        Product p8 = initProduct("Bánh Quy Bơ Danisa (200g)", "SWE-B-01", "65000", "Bánh quy bơ truyền thống Đan Mạch.", "/images/products/danisa_biscuit.png", false, catSweet, admin);
+        Product p9 = initProduct("Kẹo Dẻo Trái Cây Mix", "SWE-K-02", "45000", "Kẹo dẻo hương vị trái cây nhiệt đới.", "/images/products/fruit_candy.png", false, catSweet, admin);
+        Product p10 = initProduct("Xoài Sấy Dẻo (150g)", "DRI-X-01", "85000", "Xoài sấy dẻo tự nhiên, không đường hóa học.", "/images/products/dried_mango.png", false, catDried, admin);
+        Product p11 = initProduct("Mứt Dừa Non Sữa", "DRI-D-02", "95000", "Mứt dừa non mềm dẻo, vị sữa thơm béo.", "/images/products/coconut_jam.png", false, catDried, admin);
 
         // 4. Liên kết thành phần cho Hộp quà sẵn (p1)
         initGiftComponents(p1, List.of(

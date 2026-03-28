@@ -45,6 +45,9 @@ public class Quote {
     @Column(name = "custom_note", length = 1000)
     private String customNote;
 
+    @Column(name = "deposit_amount")
+    private BigDecimal depositAmount;
+
     @OneToMany
     @JoinColumn(name = "quote_id")
     private java.util.List<QuoteProduct> quoteProducts;

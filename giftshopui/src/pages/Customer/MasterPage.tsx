@@ -1,34 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../../components/ProductCard';
 import type { Product } from '../../components/ProductCard';
-import Header from '../../components/layout/Header';
-import Footer from '../../components/layout/Footer';
-// Mock data (Sau này bạn sẽ fetch từ API)
-const FEATURED_PRODUCTS: Product[] = [
-    {
-        id: '1', name: 'Xuân Như Ý', description: 'RƯỢU VANG + HẠT MACCA + MỨT',
-        price: '1.250.000đ', oldPrice: '1.500.000đ',
-        imageUrl: 'https://placehold.co/400x400/fdf2f8/e11d48?text=Gift+1',
-        badge: { text: '-20%', type: 'discount' }
-    },
-    {
-        id: '2', name: 'Phú Quý Mãn Đường', description: 'SƠN MÀI GOLD + YẾN SÀO + CHIVAS',
-        price: '2.800.000đ',
-        imageUrl: 'https://placehold.co/400x400/fefce8/ca8a04?text=Gift+2',
-        badge: { text: 'BEST SELLER', type: 'bestseller' }
-    },
-    {
-        id: '3', name: 'Tết An Yên', description: 'HỘP GỖ THÔNG + TRÀ SHAN TUYẾT',
-        price: '950.000đ', imageUrl: 'https://placehold.co/400x400/fef2f2/dc2626?text=Gift+3'
-    },
-    {
-        id: '4', name: 'Lộc Tấn Vinh Hoa', description: 'GIỎ DA + BÁNH NHẬP + RƯỢU NGON',
-        price: '1.850.000đ', imageUrl: 'https://placehold.co/400x400/fff1f2/be123c?text=Gift+4'
-    }
-];
+import ProductService from '../../api/service/product.service';
 
 export default function MasterPage() {
+    const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const fetchFeaturedProducts = async () => {
+            try {
+                setLoading(true);
+                const response = await ProductService.getAllProducts(true);
+                if (response.success && Array.isArray(response.data)) {
+                    // Ưu tiên lấy các sản phẩm được đánh dấu là Quà tặng (isGift)
+                    const gifts = response.data.filter((p: Product) => p.isGift);
+                    
+                    // Nếu không có đủ 4 quà tặng, lấy thêm các sản phẩm khác cho đủ 4
+                    if (gifts.length < 4) {
+                        const others = response.data.filter((p: Product) => !p.isGift);
+                        setFeaturedProducts([...gifts, ...others].slice(0, 4));
+                    } else {
+                        setFeaturedProducts(gifts.slice(0, 4));
+                    }
+                }
+            } catch (error) {
+                console.error("Lỗi khi lấy sản phẩm tiêu biểu:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFeaturedProducts();
+    }, []);
+
     return (
         <>
             <section className="relative bg-[#b30000] h-[500px] md:h-[600px] flex items-center justify-center text-center overflow-hidden">
@@ -61,12 +67,17 @@ export default function MasterPage() {
                     <div className="w-16 h-0.5 bg-[#b30000]"></div>
                 </div>
 
-                {/* Gọi component tái sử dụng ProductCard */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
-                    {FEATURED_PRODUCTS.map(product => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
+                {loading ? (
+                    <div className="flex justify-center items-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#b30000]"></div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 mb-12">
+                        {featuredProducts.map(product => (
+                            <ProductCard key={product.id} product={product} />
+                        ))}
+                    </div>
+                )}
 
                 <div className="text-center">
                     <Link to="/shop" className="inline-block border border-[#b30000] text-[#b30000] px-8 py-3 uppercase text-xs font-bold tracking-widest hover:bg-[#b30000] hover:text-white transition-colors">
@@ -76,4 +87,4 @@ export default function MasterPage() {
             </section>
         </>
     );
-}
+}
