@@ -31,6 +31,6 @@ public class ProductResponse {
 
     private UserResponse createdBy;
 
-    private List<ProductItemReponse> giftComponents;
+    private List<ProductItemResponse> giftComponents;
     private java.time.LocalDate expiredDate;
 }

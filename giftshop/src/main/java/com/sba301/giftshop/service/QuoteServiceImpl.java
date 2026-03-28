@@ -197,7 +197,7 @@ public class QuoteServiceImpl implements QuoteService {
 
     @Override
     public List<QuoteResponse> getAllQuotes() {
-        return quoteMapper.toResponseList(quoteRepository.findAll());
+        return quoteMapper.toResponseList(quoteRepository.findAllByOrderByCreatedAtDesc());
     }
 
     @Override

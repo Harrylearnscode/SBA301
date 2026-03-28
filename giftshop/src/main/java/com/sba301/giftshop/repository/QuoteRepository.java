@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface QuoteRepository extends JpaRepository<Quote, Long> {
     List<Quote> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Quote> findAllByOrderByCreatedAtDesc();
 }

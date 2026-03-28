@@ -31,5 +31,5 @@ public class OrderResponse {
     private PaymentStatus payment;
     private String payUrl;
     private LocalDateTime paidTime;
-    private List<OrderDetailReponse> orderDetails;
+    private List<OrderDetailResponse> orderDetails;
 }

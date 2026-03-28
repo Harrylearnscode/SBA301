@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductSumaryResponse {
+public class ProductSummaryResponse {
     private Long id;
 
     private CategoryResponse category;

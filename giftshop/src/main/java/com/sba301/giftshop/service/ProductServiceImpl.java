@@ -3,7 +3,7 @@ package com.sba301.giftshop.service;
 import com.sba301.giftshop.model.dto.request.ProductItemRequest;
 import com.sba301.giftshop.model.dto.request.ProductRequest;
 import com.sba301.giftshop.model.dto.response.ProductResponse;
-import com.sba301.giftshop.model.dto.response.ProductSumaryResponse;
+import com.sba301.giftshop.model.dto.response.ProductSummaryResponse;
 import com.sba301.giftshop.model.entity.Category;
 import com.sba301.giftshop.model.entity.Product;
 import com.sba301.giftshop.model.entity.ProductItem;
@@ -33,9 +33,10 @@ public class ProductServiceImpl implements ProductService {
     private final UserRepository userRepository;
     private final ProductMapper productMapper;
     private final ItemService itemService;
+    private final R2StorageService r2StorageService;
 
     @Override
-    public List<ProductSumaryResponse> getAllProducts(Boolean onlyActive) {
+    public List<ProductSummaryResponse> getAllProducts(Boolean onlyActive) {
         List<Product> products = Boolean.TRUE.equals(onlyActive)
                 ? productRepository.findByIsActiveTrue()
                 : productRepository.findAll();
@@ -44,8 +45,8 @@ public class ProductServiceImpl implements ProductService {
                 .filter(p -> p.getCreatedBy() == null || p.getCreatedBy().getRole() == Role.ADMIN)
                 .collect(Collectors.toList());
 
-        List<ProductSumaryResponse> responses = productMapper.toSummaryResponseList(filteredProducts);
-        for (ProductSumaryResponse res : responses) {
+        List<ProductSummaryResponse> responses = productMapper.toSummaryResponseList(filteredProducts);
+        for (ProductSummaryResponse res : responses) {
             res.setBasePrice(itemService.calculateFefoPrice(res.getId(), res.getBasePrice()));
             res.setExpiredDate(itemService.getEarliestExpiryDate(res.getId()));
         }
@@ -66,8 +67,7 @@ public class ProductServiceImpl implements ProductService {
         return res;
     }
 
-    // Thêm Inject R2StorageService vào đầu file
-    private final R2StorageService r2StorageService;
+
 
     @Override
     @Transactional

@@ -12,7 +12,7 @@ export default function AdminProductDetail() {
   
   const [categories, setCategories] = useState<any[]>([]);
   const [formData, setFormData] = useState({
-    name: '', sku: '', basePrice: '', categoryId: '', description: '', isGift: false, isActive: true, imageUrl: ''
+    name: '', sku: '', basePrice: '', categoryId: '', description: '', isGift: false, isActive: true, imageUrl: '', expiredDate: ''
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   
@@ -48,7 +48,8 @@ export default function AdminProductDetail() {
             description: p.description || '',
             isGift: p.isGift || false,
             isActive: p.isActive,
-            imageUrl: p.imageUrl || ''
+            imageUrl: p.imageUrl || '',
+            expiredDate: p.expiredDate || ''
           });
 
           if (p.isGift && p.giftComponents) {
@@ -170,6 +171,19 @@ export default function AdminProductDetail() {
                 <option value="" disabled>-- Chọn danh mục --</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hạn sử dụng (Lô FEFO)</label>
+              <div className="w-full border px-3 py-2 rounded bg-gray-50 text-gray-600 font-medium">
+                {formData.expiredDate ? (
+                  <span className={new Date(formData.expiredDate) < new Date(new Date().setDate(new Date().getDate() + 30)) ? 'text-amber-600 font-bold' : ''}>
+                    {new Date(formData.expiredDate).toLocaleDateString('vi-VN')}
+                  </span>
+                ) : (
+                  <span className="text-gray-400 italic text-sm">Chưa có thông tin lô hàng</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-1 italic">* Dựa trên lô hàng gần hết hạn nhất đang còn tồn kho.</p>
             </div>
           </div>
 

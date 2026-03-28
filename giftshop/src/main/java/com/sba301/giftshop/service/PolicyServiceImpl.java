@@ -1,7 +1,7 @@
 package com.sba301.giftshop.service;
 
 import com.sba301.giftshop.model.dto.request.PolicyRequest;
-import com.sba301.giftshop.model.dto.response.PolicyReponse;
+import com.sba301.giftshop.model.dto.response.PolicyResponse;
 import com.sba301.giftshop.model.entity.Policy;
 import com.sba301.giftshop.repository.PolicyRepository;
 import com.sba301.giftshop.service.PolicyService;
@@ -22,7 +22,7 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Override
     @Transactional
-    public PolicyReponse createPolicy(PolicyRequest request) {
+    public PolicyResponse createPolicy(PolicyRequest request) {
         validatePolicyRange(request.getLowerLimit(), request.getUpperLimit(), null);
 
         Policy policy = Policy.builder()
@@ -36,7 +36,7 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Override
     @Transactional
-    public PolicyReponse updatePolicy(Long id, PolicyRequest request) {
+    public PolicyResponse updatePolicy(Long id, PolicyRequest request) {
         Policy policy = policyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy chính sách giảm giá"));
 
@@ -51,12 +51,12 @@ public class PolicyServiceImpl implements PolicyService {
     }
 
     @Override
-    public List<PolicyReponse> getAllPolicies() {
+    public List<PolicyResponse> getAllPolicies() {
         return policyMapper.toResponseList(policyRepository.findAllByOrderByLowerLimitAsc());
     }
 
     @Override
-    public PolicyReponse getPolicyById(Long id) {
+    public PolicyResponse getPolicyById(Long id) {
         Policy policy = policyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy chính sách giảm giá"));
         return policyMapper.toResponse(policy);

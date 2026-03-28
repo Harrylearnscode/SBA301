@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PolicyReponse {
+public class PaymentHistoryResponse {
     private Long id;
-    private Integer upperLimit;
-    private Integer lowerLimit;
-    private Integer discount;
+    private String amount;
+    private String method;
+    private String status;
+    private String transactionDate;
 }

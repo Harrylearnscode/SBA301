@@ -10,7 +10,18 @@ import com.sba301.giftshop.repository.ItemRepository;
 import com.sba301.giftshop.repository.ProductItemRepository;
 import com.sba301.giftshop.repository.ProductRepository;
 import com.sba301.giftshop.repository.UserRepository;
+import com.sba301.giftshop.repository.OrderRepository;
+import com.sba301.giftshop.repository.QuoteRepository;
+import com.sba301.giftshop.repository.OrderDetailRepository;
+import com.sba301.giftshop.repository.QuoteProductRepository;
 import com.sba301.giftshop.model.entity.ProductItem;
+import com.sba301.giftshop.model.entity.Order;
+import com.sba301.giftshop.model.entity.OrderDetail;
+import com.sba301.giftshop.model.entity.Quote;
+import com.sba301.giftshop.model.entity.QuoteProduct;
+import com.sba301.giftshop.model.enums.OrderStatus;
+import com.sba301.giftshop.model.enums.PaymentStatus;
+import com.sba301.giftshop.model.enums.QuoteStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,6 +41,10 @@ public class DataInitializer implements CommandLineRunner {
     private final ProductRepository productRepository;
     private final ItemRepository itemRepository;
     private final ProductItemRepository productItemRepository;
+    private final OrderRepository orderRepository;
+    private final QuoteRepository quoteRepository;
+    private final OrderDetailRepository orderDetailRepository;
+    private final QuoteProductRepository quoteProductRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -85,8 +100,64 @@ public class DataInitializer implements CommandLineRunner {
         addBatchesIfMissing(p9, "SWE2");
         addBatchesIfMissing(p10, "DRI1");
         addBatchesIfMissing(p11, "DRI2");
+        
+        // 6. Khởi tạo Đơn hàng & Báo giá mẫu (Cho Dashboard)
+        if (orderRepository.count() == 0) {
+            initSampleOrdersAndQuotes(admin, userRepository.findByUsername("u"), List.of(p1, p2, p3, p6, p8, p10));
+        }
 
         System.out.println("====== HOÀN TẤT KHỞI TẠO DỮ LIỆU =====");
+    }
+
+    private void initSampleOrdersAndQuotes(User admin, User customer, List<Product> products) {
+        System.out.println("=> Đang tạo đơn hàng và báo giá mẫu...");
+        
+        // Tạo 10 đơn hàng rải rác trong 7 ngày qua
+        for (int i = 0; i < 10; i++) {
+            LocalDateTime date = LocalDateTime.now().minusDays(i % 7).minusHours(i);
+            Order order = Order.builder()
+                    .user(customer)
+                    .shippingAddress("Số " + (i + 1) * 10 + " Đường ABC, Quận 1, TP.HCM")
+                    .status(i % 4 == 0 ? OrderStatus.DELIVERED : i % 3 == 0 ? OrderStatus.PROCESSING : OrderStatus.PENDING)
+                    .payment(i % 2 == 0 ? PaymentStatus.PAID : PaymentStatus.UNPAID)
+                    .orderDate(date)
+                    .updateDate(date)
+                    .totalItem(2)
+                    .totalPrice(new BigDecimal("500000").multiply(new BigDecimal(i + 1)))
+                    .discountApplied(5)
+                    .build();
+            
+            Order savedOrder = orderRepository.save(order);
+            
+            // Thêm chi tiết đơn hàng
+            orderDetailRepository.save(OrderDetail.builder()
+                    .order(savedOrder)
+                    .product(products.get(i % products.size()))
+                    .quantity(1)
+                    .unitPrice(products.get(i % products.size()).getBasePrice())
+                    .build());
+        }
+
+        // Tạo 5 báo giá
+        for (int i = 0; i < 5; i++) {
+            Quote quote = Quote.builder()
+                    .user(customer)
+                    .status(i == 0 ? QuoteStatus.PENDING : i == 1 ? QuoteStatus.QUOTED : QuoteStatus.ACCEPTED)
+                    .createdAt(LocalDateTime.now().minusDays(i))
+                    .totalPrice(new BigDecimal("2000000").multiply(new BigDecimal(i + 1)))
+                    .validUntil(LocalDateTime.now().plusDays(7))
+                    .salesStaff(admin)
+                    .build();
+            
+            Quote savedQuote = quoteRepository.save(quote);
+            
+            quoteProductRepository.save(QuoteProduct.builder()
+                    .quote(savedQuote)
+                    .product(products.get(0))
+                    .quantity(10)
+                    .quotedPrice(new BigDecimal("190000"))
+                    .build());
+        }
     }
 
     private User initUser(String username, String rawPassword, String email, String fullName, Role role) {

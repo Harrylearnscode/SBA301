@@ -5,18 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductItemReponse {
+@Builder
+public class OrderDetailResponse {
     private Long id;
-
-    // Sản phẩm đóng vai trò là gói quà (Set)
-//    private ProductResponse customGift;
-
-    // Sản phẩm thành phần bên trong
     private ProductResponse product;
-
+    private BigDecimal unitPrice;
     private Integer quantity;
 }
